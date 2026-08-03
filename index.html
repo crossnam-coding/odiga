@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>어디가지 — 조건으로 찾는 장소</title>
+<meta name="description" content="광고 말고 근거로. 내 위치·이동수단·조건으로 갈 곳을 찾고, 왜 그런지 링크까지 같이 봅니다.">
+<meta name="theme-color" content="#2f6b4f" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12150f" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="어디가지">
+<link rel="stylesheet" href="assets/app.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍚</text></svg>">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="brand">
+    <h1>어디가지</h1>
+    <span>광고 말고 근거로</span>
+  </header>
+
+  <section class="ask">
+    <label for="q" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">조건</label>
+    <textarea id="q" placeholder="어머니 모시고 2인, 1인 2만원 안쪽. 조미료 적고 집에서 해먹기 번거로운 거."></textarea>
+
+    <div class="field">
+      <label id="modeLabel">어떻게 갈까</label>
+      <div class="seg" id="modeSeg" role="group" aria-labelledby="modeLabel">
+        <button type="button" data-mode="walk" aria-pressed="false">🚶 걸어서</button>
+        <button type="button" data-mode="car" aria-pressed="true">🚗 차로</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="rad">얼마나 멀리까지</label>
+      <div class="range">
+        <input type="range" id="rad" min="5" max="60" step="5" value="20">
+        <output id="radOut" for="rad">차로 20분</output>
+      </div>
+    </div>
+
+    <div class="loc">
+      <span id="locText">위치 잡는 중…</span>
+      <button type="button" id="locBtn">다시 잡기</button>
+    </div>
+
+    <div class="seg" id="pickFallback" hidden>
+      <button type="button" data-lat="37.7062838" data-lng="127.3970634">가평 리버레인</button>
+      <button type="button" data-lat="37.5665" data-lng="126.9780">서울시청</button>
+    </div>
+
+    <button type="button" class="go" id="goBtn">찾아줘</button>
+  </section>
+
+  <div class="note" id="notice" hidden></div>
+
+  <section class="results" id="results" aria-live="polite"></section>
+
+  <div class="note">
+    <b>지금 되는 것 / 안 되는 것</b>
+    <span>✅ 내 위치 · 이동수단 · 시간 반경 · 거리 계산 · 근거 링크 — <b>전부 진짜로 동작</b></span>
+    <span>⏳ 조건을 넣으면 블로그를 새로 읽는 <b>실시간 검색</b> — 네이버 검색 키 붙이면 열림</span>
+  </div>
+
+  <p class="foot">
+    거리는 직선거리 × 1.35 도로보정 · 도보 4.5km/h · 차 38km/h + 주차 2분 기준의 <b>추정치</b>야.<br>
+    근거는 네이버 블로그 본문을 직접 읽어 뽑았고, 인용에 날짜와 원문 링크를 항상 같이 붙여.<br>
+    위치는 이 브라우저 안에서만 쓰고 아무 데도 보내지 않아.
+  </p>
+
+</div>
+<script src="assets/app.js"></script>
+</body>
+</html>

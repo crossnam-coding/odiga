@@ -1,0 +1,11 @@
+build/
+img/*.b64
+img/*.webp
+img/*.png
+img/s_*.jpg
+img/v_*.jpg
+prototype.html
+두곳.html
+가평점심.html
+어디가지.html
+프로필.md
