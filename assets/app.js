@@ -72,7 +72,9 @@ function card(p, dist, best) {
         <h3 class="cname">${p.name}<small>${p.kind}</small></h3>
         <div class="cprice">${price}</div>
         <div class="cmeta">${p.addr}${p.parking ? ' · ' + p.parking : ''}</div>
-        <div class="ctime${far ? ' far' : ''}">${MODES[state.mode].label} ${dist.min}분 · ${dist.road.toFixed(1)}km</div>
+        <div class="ctime${far ? ' far' : ''}">${dist.min
+          ? `${MODES[state.mode].label} ${dist.min}분 · ${dist.road.toFixed(1)}km`
+          : '거리 미계산'}</div>
       </div>`];
 
   if (p.hours || p.closed) {
@@ -103,8 +105,17 @@ function card(p, dist, best) {
 function render() {
   const box = $('#results');
   box.innerHTML = '';
+  if (!state.places.length) {
+    box.innerHTML = '<p class="empty">조건을 넣고 찾아줘를 눌러봐</p>';
+    return;
+  }
+  // 위치를 못 잡았어도 결과는 보여준다. 거리만 빠진다.
   if (!state.origin) {
-    box.innerHTML = '<p class="empty">위치를 먼저 잡아줘 ↑</p>';
+    const head = document.createElement('div');
+    head.className = 'rhead';
+    head.innerHTML = `<span>${state.places.length}곳 · 거리 미계산</span><span>위치 허용하면 순서가 바뀜</span>`;
+    box.appendChild(head);
+    state.places.forEach((p, i) => box.appendChild(card(p, { road: 0, min: 0 }, i === 0)));
     return;
   }
   const scored = state.places
@@ -124,16 +135,85 @@ function render() {
   out.forEach((s, i) => box.appendChild(card(s.p, s.d, i === 0 && inRange.length > 0)));
 }
 
-/* ── 조건 검색 (백엔드 대기) ── */
-function search() {
+/* ── 조건 검색 ── */
+// 네이버 지역 검색은 좌표만으로 범위를 좁힐 수 없다. 지역명이 있어야 결과가 그 동네로 모인다.
+// (2026-08-03 실측: 지역명 없이 "카페 노트북 콘센트"로 찾으면 30건 중 해당 지역이 2건뿐이었다.)
+// 한국어로 장소를 물을 땐 지역을 앞에 두고 접미사를 안 붙인다 — "가평 한정식", "강남 브런치".
+// 접미사(시·군·구·동…)만 찾으면 "가평"을 통째로 놓친다.
+const SUFFIX_RE = /([가-힣]{2,7}(?:특별시|광역시|시|군|구|읍|면|동|리|역))(?![가-힣])/;
+const NOISE = /^(어머니|아버지|부모님|혼자|친구|가족|근처|여기|우리|오늘|내일|주말|점심|저녁|아침)$/;
+function pickRegion(q) {
+  const suf = q.match(SUFFIX_RE);
+  if (suf) return suf[1];
+  // 접미사가 없으면 첫 어절을 지역 후보로 본다. 음식 종류나 사람 얘기면 지역이 아니다.
+  const first = q.trim().split(/[\s,·]+/)[0]?.replace(/(에서|으로|에|의|은|는|이|가|로)$/, '') || '';
+  if (first.length >= 2 && first.length <= 6 && !NOISE.test(first)
+      && !/한정식|카페|맛집|국수|고기|정식|밥집|식당/.test(first)) return first;
+  return '';
+}
+
+function esc(s) { return String(s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c])); }
+
+async function search() {
   const q = $('#q').value.trim();
   const n = $('#notice');
+  const btn = $('#goBtn');
   if (!q) { $('#q').focus(); return; }
+
+  const region = pickRegion(q);
+  if (!region) {
+    n.hidden = false;
+    n.innerHTML = `<b>어디 근처인지 알려줘.</b>
+      <span>조건에 지역을 같이 써줘 — 예: <b>가평</b> 한정식, 어머니 모시고.
+      네이버 지역 검색은 지역명이 없으면 전국에서 아무 데나 물어와.</span>`;
+    return;
+  }
+
+  btn.disabled = true;
+  const label = btn.textContent;
+  btn.textContent = '블로그 읽는 중…';
   n.hidden = false;
-  n.innerHTML = `<b>아직 실시간 검색은 안 붙었어.</b>
-    <span>"${q.replace(/</g, '&lt;')}" — 이 조건으로 블로그를 새로 읽으려면 네이버 검색 키가 필요해.
-    지금 아래 목록은 <b>8월 3일에 미리 읽어둔 6곳</b>이고, 거리·이동수단은 진짜로 계산된 거야.</span>`;
-  n.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  n.innerHTML = `<b>"${esc(region)}" 근처에서 찾는 중</b>
+    <span>지역 검색으로 후보를 잡고, 블로그 본문을 열어 조건별 근거를 뽑고 있어. 10초쯤 걸려.</span>`;
+
+  try {
+    const p = new URLSearchParams({ q, region });
+    if (state.origin) { p.set('lat', state.origin.lat); p.set('lng', state.origin.lng); }
+    const r = await fetch(`/api/search?${p}`);
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);
+
+    if (!d.places?.length) {
+      n.innerHTML = `<b>"${esc(region)}"에서 못 찾았어.</b>
+        <span>지역명을 더 넓게(예: 면·읍 대신 시·군) 써보거나, 음식 종류를 같이 적어줘.</span>`;
+      return;
+    }
+
+    // 서버가 준 좌표에 내 위치 기준 거리를 입힌다.
+    state.places = d.places.map((x) => ({
+      id: x.name, name: x.name, kind: x.kind, addr: x.addr, lat: x.lat, lng: x.lng,
+      tel: x.tel || null,
+      priceLow: x.priceLow, priceHigh: x.priceHigh,
+      priceNote: x.priceLow ? null : '가격 미확인',
+      evidence: x.evidence.map((e) => ({ k: e.k, q: e.q, url: e.url, date: e.date })),
+      warn: [
+        ...x.warn.map((w) => `${w.q} (${w.date})`),
+        ...(x.missing.length ? [`미확인: ${x.missing.join(', ')}`] : []),
+      ],
+      photos: [],
+    }));
+
+    n.innerHTML = `<b>"${esc(q)}"</b>
+      <span>조건 <b>${d.asked.join(' · ') || '없음'}</b> 기준으로 ${d.places.length}곳.
+      각 항목의 인용은 실제 블로그 본문에서 뽑았고 날짜·링크가 붙어 있어.</span>`;
+    render();
+    $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) {
+    n.innerHTML = `<b>검색이 실패했어.</b><span>${esc(e.message)} — 잠시 뒤 다시 눌러줘.</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = label;
+  }
 }
 
 /* ── 초기화 ── */

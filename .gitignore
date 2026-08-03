@@ -9,3 +9,7 @@ prototype.html
 가평점심.html
 어디가지.html
 프로필.md
+.env
+.env.*
+dist/
+.wrangler/
