@@ -177,6 +177,7 @@ async function init() {
       `<p class="empty">장소 데이터를 못 불러왔어 (${e.message})<br>새로고침해봐</p>`;
     return;
   }
+  render();   // 위치를 못 잡아도 안내는 뜨게
   locate();
 }
 document.addEventListener('DOMContentLoaded', init);
