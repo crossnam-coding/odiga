@@ -1,3 +1,5 @@
+import { findRegion } from "./regions.js";
+
 // 어디가지 — 조건으로 찾는 장소
 // v0: 위치·이동수단·반경은 실제 동작. 실시간 검색은 백엔드(네이버 검색 키) 연결 후.
 
@@ -31,27 +33,42 @@ function travel(km, mode) {
 }
 
 /* ── 위치 ── */
-function setOrigin(lat, lng, label) {
-  state.origin = { lat, lng, label };
-  $('#locText').innerHTML = `기준 <b>${label}</b>`;
+// 어디로 인식됐는지 화면에 보여준다. 안 보여주면 결과가 이상할 때
+// 위치 탓인지 검색 탓인지 사용자가 구분할 수 없다.
+async function setOrigin(lat, lng) {
+  state.origin = { lat, lng };
+  const el = $('#locText');
+  el.innerHTML = '여기가 어딘지 확인 중…';
+  try {
+    const r = await fetch(`/api/where?lat=${lat}&lng=${lng}`);
+    const d = await r.json();
+    state.region = d.region || null;
+    el.innerHTML = d.region
+      ? `지금 <b>${d.region}</b>${d.near && d.near !== d.region ? ` · ${d.near}` : ''} 근처`
+      : `위치는 잡았는데 동네 이름을 못 알아냈어 — 조건에 지역을 써줘`;
+  } catch {
+    state.region = null;
+    el.innerHTML = '위치는 잡았어 (동네 확인 실패)';
+  }
   render();
 }
 function locate() {
   const el = $('#locText');
   if (!navigator.geolocation) {
-    el.textContent = '이 브라우저는 위치를 지원하지 않아';
+    el.textContent = '이 브라우저는 위치를 못 써 — 조건에 지역을 같이 써줘';
     return;
   }
   el.textContent = '위치 잡는 중…';
   navigator.geolocation.getCurrentPosition(
-    (p) => setOrigin(p.coords.latitude, p.coords.longitude, '현재 위치'),
+    (p) => setOrigin(p.coords.latitude, p.coords.longitude),
     (err) => {
+      state.origin = null; state.region = null;
       const why = { 1: '위치 권한이 꺼져 있어', 2: '위치를 못 잡았어', 3: '시간이 초과됐어' }[err.code]
         || '위치를 못 잡았어';
-      el.innerHTML = `${why} — 아래에서 직접 골라줘`;
-      $('#pickFallback').hidden = false;
+      el.innerHTML = `${why} — 조건 앞에 지역을 써줘 (예: <b>용인</b> 한정식)`;
     },
-    { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+    // 캐시된 옛날 좌표를 쓰면 다른 동네에서 이전 위치가 그대로 나온다.
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
 }
 
@@ -80,10 +97,20 @@ function card(p, dist, best) {
   if (p.hours || p.closed) {
     parts.push(`<div class="cmeta">🕘 ${[p.hours, p.closed].filter(Boolean).join(' · ')}</div>`);
   }
+  // "여기가 좋은 집인가"와 "내 조건에 맞는가"는 다른 질문이다. 나눠서 보여준다.
+  const evRow = (e, cls) => `<div class="e${cls}"><span class="ek">${e.k}${
+      e.ad ? `<span class="adflag">${e.ad}</span>` : ''}</span><q>${e.q}</q>
+      <a href="${e.url}" target="_blank" rel="noopener">${e.date}</a></div>`;
+  if (p.good?.length) {
+    parts.push('<div class="ev good"><span class="evhd">여기가 좋다는 근거</span>'
+      + p.good.map((e) => evRow(e, ' g')).join('') + '</div>');
+  } else {
+    parts.push('<div class="ev"><span class="evhd none">여기가 좋다는 근거는 못 찾았어 — '
+      + '조건만 맞는 곳이야</span></div>');
+  }
   if (p.evidence?.length) {
-    parts.push('<div class="ev">' + p.evidence.map((e) => `
-      <div class="e"><span class="ek">${e.k}</span><q>${e.q}</q>
-      <a href="${e.url}" target="_blank" rel="noopener">${e.date}</a></div>`).join('') + '</div>');
+    parts.push('<div class="ev"><span class="evhd">내 조건</span>'
+      + p.evidence.map((e) => evRow(e, '')).join('') + '</div>');
   }
   if (p.warn?.length) {
     parts.push(`<div class="warn"><b>⚠︎ 주의</b>${p.warn.map((w) => `<span>${w}</span>`).join('')}</div>`);
@@ -120,7 +147,6 @@ function render() {
   }
   const scored = state.places
     .map((p) => ({ p, d: travel(haversine(state.origin, p), state.mode) }))
-    .filter(({ p }) => p.id !== 'riverain' || haversine(state.origin, p) > 0.15)
     .sort((a, b) => a.d.min - b.d.min);
 
   const inRange = scored.filter((s) => s.d.min <= state.minutes);
@@ -129,8 +155,8 @@ function render() {
   const head = document.createElement('div');
   head.className = 'rhead';
   head.innerHTML = inRange.length
-    ? `<span>${MODES[state.mode].label} ${state.minutes}분 안 · ${inRange.length}곳</span><span>수집 8/3</span>`
-    : `<span style="color:var(--caution)">${state.minutes}분 안엔 없어 — 가까운 순 3곳</span><span>수집 8/3</span>`;
+    ? `<span>${MODES[state.mode].label} ${state.minutes}분 안 · ${inRange.length}곳</span><span>근거 많은 순</span>`
+    : `<span style="color:var(--caution)">${state.minutes}분 안엔 없어 — 가까운 순 3곳</span><span>반경을 넓혀봐</span>`;
   box.appendChild(head);
   out.forEach((s, i) => box.appendChild(card(s.p, s.d, i === 0 && inRange.length > 0)));
 }
@@ -138,19 +164,8 @@ function render() {
 /* ── 조건 검색 ── */
 // 네이버 지역 검색은 좌표만으로 범위를 좁힐 수 없다. 지역명이 있어야 결과가 그 동네로 모인다.
 // (2026-08-03 실측: 지역명 없이 "카페 노트북 콘센트"로 찾으면 30건 중 해당 지역이 2건뿐이었다.)
-// 한국어로 장소를 물을 땐 지역을 앞에 두고 접미사를 안 붙인다 — "가평 한정식", "강남 브런치".
-// 접미사(시·군·구·동…)만 찾으면 "가평"을 통째로 놓친다.
-const SUFFIX_RE = /([가-힣]{2,7}(?:특별시|광역시|시|군|구|읍|면|동|리|역))(?![가-힣])/;
-const NOISE = /^(어머니|아버지|부모님|혼자|친구|가족|근처|여기|우리|오늘|내일|주말|점심|저녁|아침)$/;
-function pickRegion(q) {
-  const suf = q.match(SUFFIX_RE);
-  if (suf) return suf[1];
-  // 접미사가 없으면 첫 어절을 지역 후보로 본다. 음식 종류나 사람 얘기면 지역이 아니다.
-  const first = q.trim().split(/[\s,·]+/)[0]?.replace(/(에서|으로|에|의|은|는|이|가|로)$/, '') || '';
-  if (first.length >= 2 && first.length <= 6 && !NOISE.test(first)
-      && !/한정식|카페|맛집|국수|고기|정식|밥집|식당/.test(first)) return first;
-  return '';
-}
+// 지역은 추측하지 않고 사전에 있을 때만 인정한다 (assets/regions.js 주석 참고).
+const pickRegion = (q) => findRegion(q);
 
 function esc(s) { return String(s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c])); }
 
@@ -160,12 +175,12 @@ async function search() {
   const btn = $('#goBtn');
   if (!q) { $('#q').focus(); return; }
 
+  // 지역명을 안 썼어도 위치가 있으면 서버가 좌표로 알아낸다.
   const region = pickRegion(q);
-  if (!region) {
+  if (!region && !state.origin) {
     n.hidden = false;
-    n.innerHTML = `<b>어디 근처인지 알려줘.</b>
-      <span>조건에 지역을 같이 써줘 — 예: <b>가평</b> 한정식, 어머니 모시고.
-      네이버 지역 검색은 지역명이 없으면 전국에서 아무 데나 물어와.</span>`;
+    n.innerHTML = `<b>여기가 어딘지 몰라.</b>
+      <span>위 <b>다시 잡기</b>로 위치를 허용하거나, 조건 앞에 지역을 써줘 — 예: <b>용인</b> 한정식.</span>`;
     return;
   }
 
@@ -173,11 +188,12 @@ async function search() {
   const label = btn.textContent;
   btn.textContent = '블로그 읽는 중…';
   n.hidden = false;
-  n.innerHTML = `<b>"${esc(region)}" 근처에서 찾는 중</b>
-    <span>지역 검색으로 후보를 잡고, 블로그 본문을 열어 조건별 근거를 뽑고 있어. 10초쯤 걸려.</span>`;
+  n.innerHTML = `<b>${region ? esc(region) + ' 근처에서' : '지금 있는 곳 근처에서'} 찾는 중</b>
+    <span>후보를 잡고 블로그 본문을 열어 조건별 근거를 뽑고 있어. 10초쯤 걸려.</span>`;
 
   try {
-    const p = new URLSearchParams({ q, region });
+    const p = new URLSearchParams({ q });
+    if (region) p.set('region', region);
     if (state.origin) { p.set('lat', state.origin.lat); p.set('lng', state.origin.lng); }
     const r = await fetch(`/api/search?${p}`);
     const d = await r.json();
@@ -195,7 +211,8 @@ async function search() {
       tel: x.tel || null,
       priceLow: x.priceLow, priceHigh: x.priceHigh,
       priceNote: x.priceLow ? null : '가격 미확인',
-      evidence: x.evidence.map((e) => ({ k: e.k, q: e.q, url: e.url, date: e.date })),
+      evidence: x.evidence.map((e) => ({ k: e.k, q: e.q, url: e.url, date: e.date, ad: e.ad })),
+      good: (x.good || []).map((e) => ({ k: e.k, q: e.q, url: e.url, date: e.date, ad: e.ad })),
       warn: [
         ...x.warn.map((w) => `${w.q} (${w.date})`),
         ...(x.missing.length ? [`미확인: ${x.missing.join(', ')}`] : []),
@@ -203,9 +220,10 @@ async function search() {
       photos: [],
     }));
 
-    n.innerHTML = `<b>"${esc(q)}"</b>
-      <span>조건 <b>${d.asked.join(' · ') || '없음'}</b> 기준으로 ${d.places.length}곳.
-      각 항목의 인용은 실제 블로그 본문에서 뽑았고 날짜·링크가 붙어 있어.</span>`;
+    n.innerHTML = `<b>${esc(d.region)} · ${d.places.length}곳</b>
+      <span>조건 <b>${d.asked.join(' · ') || '없음'}</b> 기준.
+      ${d.regionFrom === '현재 위치' ? '지역은 <b>현재 위치</b>에서 잡았어. ' : ''}
+      인용은 실제 블로그 본문에서 뽑았고 날짜·링크가 붙어 있어.</span>`;
     render();
     $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {
@@ -248,16 +266,10 @@ async function init() {
       setOrigin(+b.dataset.lat, +b.dataset.lng, b.textContent)));
   $('#radOut').textContent = `${MODES.car.label} ${state.minutes}분`;
 
-  try {
-    const r = await fetch('data/places.json', { cache: 'no-cache' });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    state.places = (await r.json()).places;
-  } catch (e) {
-    $('#results').innerHTML =
-      `<p class="empty">장소 데이터를 못 불러왔어 (${e.message})<br>새로고침해봐</p>`;
-    return;
-  }
-  render();   // 위치를 못 잡아도 안내는 뜨게
+  // 미리 저장해둔 목록을 먼저 띄우지 않는다.
+  // 8/3 가평 데이터를 초기 화면에 뿌렸더니 다른 동네에서 열어도 가평이 나와,
+  // 검색이 된 건지 안 된 건지 구분할 수 없었다.
+  render();
   locate();
 }
 document.addEventListener('DOMContentLoaded', init);

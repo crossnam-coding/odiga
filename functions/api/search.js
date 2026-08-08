@@ -47,18 +47,63 @@ const ASPECTS = [
    그래서 문장에서 검색 가능한 종류만 뽑아 쿼리로 쓰고, 나머지 조건은 근거 추출에만 쓴다. */
 const KINDS = [
   '한정식','백반','국밥','칼국수','막국수','수제비','두부','순두부','산채정식','정식',
-  '냉면','삼겹살','고깃집','고기','횟집','물회','매운탕','백숙','닭갈비','추어탕','보쌈',
-  '카페','커피','브런치','베이커리','빵집','디저트','파스타','피자','스테이크',
-  '중식','짜장면','짬뽕','초밥','일식','돈까스','우동','라멘','분식','국수','쌈밥','비빔밥',
+  '냉면','삼겹살','고깃집','고기','소고기','돼지고기','갈비','곱창','족발','보쌈','닭갈비','백숙','삼계탕',
+  '생선구이','생선조림','생선','갈치','고등어','조기','장어','아귀찜','대구탕','알탕','해물탕',
+  '횟집','회','물회','매운탕','추어탕','조림','찜','구이','탕','전골','수육',
+  '카페','커피','브런치','베이커리','빵집','디저트','파스타','피자','스테이크','샐러드',
+  '중식','짜장면','짬뽕','탕수육','마라탕','초밥','스시','일식','돈까스','우동','라멘','규동',
+  '분식','국수','쌈밥','비빔밥','덮밥','도시락','뷔페','샤브샤브','만두','죽','칼국수',
 ];
+// 조건을 말하는 단어들. 검색어로 쓰면 안 된다.
+const NOT_KIND = /어머니|아버지|부모님|어른|어르신|가족|친구|혼자|모시고|같이|함께|먹고|싶|하는데|주차|조미료|에어컨|콘센트|노트북|담백|자극|저렴|가성비|조용|근처|여기|괜찮|좋은|맛있|추천|곳|집인?데|요$|해줘|찾아/g;
+
 function searchTerms(q, region) {
   const found = KINDS.filter((k) => q.includes(k));
-  // 긴 것부터 — "산채정식"이 "정식"보다 구체적이다.
-  found.sort((a, b) => b.length - a.length);
-  const kinds = found.slice(0, 3);
+  found.sort((a, b) => b.length - a.length);   // "생선구이"가 "생선"보다 구체적이다
+  let kinds = found.slice(0, 3);
+
+  // 사전에 없는 음식을 말할 수 있다. "맛집"으로 뭉뚱그리면 엉뚱한 게 나온다.
+  // (실측: "엄마랑 생선 먹고 싶다" → 사전에 생선이 없어 베이커리가 나왔다.)
+  // 조건어를 걷어내고 남은 말을 그대로 검색어로 쓴다.
+  if (!kinds.length) {
+    const rest = q.replace(NOT_KIND, ' ').replace(/[^가-힣a-zA-Z ]/g, ' ')
+      .split(/\s+/).filter((w) => w.length >= 2 && !REGION_HINT.test(w));
+    kinds = rest.slice(0, 2);
+  }
   if (!kinds.length) kinds.push('맛집');
   return kinds.map((k) => (region ? `${region} ${k}` : k));
 }
+// 지역명이 검색어에 두 번 들어가지 않게.
+const REGION_HINT = /(시|군|구|읍|면|동|리|역)$/;
+
+/* ── 여기가 좋은 집이라는 근거 ──
+   지역 검색이 준 순서를 그대로 믿으면 안 된다. 그 순서는 네이버의 노출 순위이지
+   "좋은 집"의 근거가 아니다. 광고를 피하려고 만든 도구가 광고 순서를 그대로 쓰면 의미가 없다.
+
+   그래서 협찬 글이 쓰지 못하는 문장만 근거로 센다.
+   30분 있다 사진만 찍고 간 사람은 다시 오지 않고, 다른 집과 비교하지 못하고,
+   단점을 적으면서까지 추천하지 않는다.
+
+   실측 주의(2026-08-03): "재방문"이라는 단어만 보면 안 된다. 농우본갈비 후기의
+   "6명이 60만 원, 재방문은?"은 부정이었다. 긍정형만 인정하고 의문·부정형은 제외한다. */
+const GOOD = [
+  { k: '재방문',   re: /(또 ?(왔|와서|가|먹|찾)|재방문 ?(의사|할 ?만|하고 ?싶|각|확정)|[두세네] ?번째 ?(방문|왔|와)|단골|자주 ?(와|가|들))/ },
+  { k: '비교우위', re: /((가 ?본|먹어 ?본)[^.]{0,20}중(에|에서)? ?(제일|가장)|보다 ?(여기|이 ?집|이 ?곳)가|차라리 ?(여기|이 ?집)|여기가 ?(제일|훨씬|더) ?(낫|좋))/ },
+  { k: '현지',     re: /(현지인|동네 ?(사람|주민|맛집)|주민들이|로컬 ?맛집)/ },
+  // 단점을 실제로 적은 뒤 그럼에도 추천해야 한다.
+  // "웨이팅은 기본!"처럼 사람 많음을 자랑하는 문장은 단점 인정이 아니다.
+  { k: '단점인정', re: /(웨이팅이? ?(길|심하|있)|한참 ?기다|자리가? ?좁|시끄러|아쉬웠|좀 ?비싸)[^.]{0,35}(그래도|그런데도|하지만|불구하고|감수|갈 ?만|또 ?가)/ },
+];
+// 위 표현이 의문·부정으로 쓰인 경우. 이게 걸리면 근거로 세지 않는다.
+const NOT_GOOD = /(재방문은\?|재방문 ?(의사)? ?(없|안|글쎄|의문)|다시 ?(는|올 ?일|갈 ?일)? ?(없|안)|기대(했던)?[^.]{0,10}만큼은? ?아니|굳이 ?다시)/;
+
+/* ── 광고처럼 쓴 문장 ──
+   협찬 여부 자체는 판별할 수 없다(표기 검출률 14.2%). 하지만 "이 문장이 광고 말투인가"는
+   문장 하나만 보면 되는 훨씬 쉬운 문제다.
+   근거를 지우지는 않는다. 판단은 사람이 하고, 도구는 "이건 광고처럼 읽힌다"고 표시만 한다. */
+const AD_TONE = /(맛집 ?)?(인증|인정)합?니다|믿고 ?(먹|가|드)|여기가 ?(답|진리)|강력 ?추천|무조건 ?(가|드|먹)|인생 ?(맛집|메뉴|샷)|역대급|존맛|JMT|여긴 ?못 ?참|실패 ?없|안 ?가면 ?후회|필수 ?코스|웨이팅은 ?기본|재방문 ?각|찐맛집|맛집 ?인정|후회 ?없/i;
+// 대가성을 밝힌 글. 이건 명시적이라 확실하다.
+const DISCLOSED = /(소정의|업체(로부터|에서)|제공받아|지원받아|협찬|체험단|원고료|무상 ?제공)/;
 
 // 지뢰: 가서야 아는 것. 이런 문장은 협찬 글이 절대 쓰지 않는다.
 const HAZARD = /웨이팅\s*\d+\s*분|줄\s*서|바람\s*(많이\s*)?들어|추웠|더웠|시끄러|불친절|재방문\s*(안|의사\s*없)|또\s*가진\s*않|포장\s*(이\s*)?안\s*[돼되]/;
@@ -122,17 +167,33 @@ function sentenceAround(text, re) {
   return out.slice(0, 130);
 }
 
+// 좌표를 지역명으로. 네이버 지역 검색은 좌표로 범위를 좁힐 수 없어서 지역명이 반드시 필요한데,
+// 위치를 잡아놓고 사용자에게 지역명을 또 물어보는 건 말이 안 된다.
+async function regionFromCoords(lat, lng) {
+  try {
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&zoom=10&accept-language=ko`
+      + `&lat=${lat}&lon=${lng}`,
+      { headers: { 'User-Agent': 'odiga/1.0 (https://odiga-eyf.pages.dev)' } });
+    if (!r.ok) return '';
+    const a = (await r.json()).address || {};
+    const name = a.city || a.county || a.town || a.borough || a.city_district || a.province || '';
+    // "가평군" 보다 "가평" 이 블로그에서 더 많이 쓰인다.
+    return name.replace(/(특별시|광역시|자치시|자치도)$/, '').replace(/(시|군|구)$/, '') || name;
+  } catch { return ''; }
+}
+
 export async function onRequestGet({ request, env }) {
   const u = new URL(request.url);
   const q     = (u.searchParams.get('q') || '').trim();
   const lat   = parseFloat(u.searchParams.get('lat'));
   const lng   = parseFloat(u.searchParams.get('lng'));
-  const region= (u.searchParams.get('region') || '').trim();
+  let region  = (u.searchParams.get('region') || '').trim();
 
   const json = (body, status = 200) => new Response(JSON.stringify(body), {
     status,
     headers: { 'content-type': 'application/json; charset=utf-8',
-               'cache-control': 'public, max-age=300' },
+               'cache-control': 'public, max-age=60' },
   });
 
   if (!q) return json({ error: '조건을 입력해줘' }, 400);
@@ -142,6 +203,16 @@ export async function onRequestGet({ request, env }) {
 
   // 사용자가 실제로 물어본 조건만 남긴다. 안 물어본 건 채우지 않는다.
   const asked = ASPECTS.filter((a) => a.ask.test(q));
+
+  // 지역명을 안 썼으면 위치에서 뽑는다.
+  let regionFrom = region ? '입력' : null;
+  if (!region && Number.isFinite(lat) && Number.isFinite(lng)) {
+    region = await regionFromCoords(lat, lng);
+    if (region) regionFrom = '현재 위치';
+  }
+  if (!region) {
+    return json({ error: '어디 근처인지 모르겠어 — 위치를 허용하거나 조건에 지역을 같이 써줘' }, 400);
+  }
 
   try {
     // 1) 후보 장소 — 지역 검색은 좌표를 준다.
@@ -196,7 +267,24 @@ export async function onRequestGet({ request, env }) {
         for (const b of bodies) {
           if (!b.text) continue;
           const quote = sentenceAround(b.text, a.hit);
-          if (quote) { evidence.push({ k: a.key, q: quote, url: b.url, date: b.date }); break; }
+          if (quote) { evidence.push({ k: a.key, q: quote, url: b.url, date: b.date,
+            ad: DISCLOSED.test(b.text) ? '대가성 밝힘' : (AD_TONE.test(quote) ? '광고 말투' : null) }); break; }
+        }
+      }
+
+      // 여기가 좋은 집이라는 근거. 없으면 없다고 말한다.
+      const good = [];
+      for (const g of GOOD) {
+        for (const b of bodies) {
+          if (!b.text) continue;
+          const quote = sentenceAround(b.text, g.re);
+          if (!quote || NOT_GOOD.test(quote)) continue;   // 의문·부정형은 근거가 아니다
+          good.push({
+            k: g.k, q: quote, url: b.url, date: b.date,
+            // 근거는 남기되 어떻게 읽어야 하는지 같이 준다.
+            ad: DISCLOSED.test(b.text) ? '대가성 밝힘' : (AD_TONE.test(quote) ? '광고 말투' : null),
+          });
+          break;
         }
       }
 
@@ -204,6 +292,11 @@ export async function onRequestGet({ request, env }) {
       for (const b of bodies) {
         const h = b.text && sentenceAround(b.text, HAZARD);
         if (h) { warn.push({ q: h, url: b.url, date: b.date }); break; }
+      }
+      // 재방문을 되묻거나 기대에 못 미쳤다는 문장은 경고로 올린다.
+      for (const b of bodies) {
+        const d = b.text && sentenceAround(b.text, NOT_GOOD);
+        if (d) { warn.push({ q: d, url: b.url, date: b.date }); break; }
       }
 
       // 본문 아무 숫자나 긁으면 "4,000~175,000원" 같은 쓰레기가 나온다.
@@ -226,20 +319,25 @@ export async function onRequestGet({ request, env }) {
       return {
         ...c,
         evidence,
+        good,
         missing,
         warn,
         priceLow: prices[0] ?? null,
         priceHigh: prices[prices.length - 1] ?? null,
         score: evidence.length,
+        // 좋은 집이라는 근거에 더 무게를 둔다. 조건은 맞아도 맛이 없을 수 있다.
+        rank: evidence.length + good.length * 2 - warn.length,
       };
     }));
 
-    // 조건을 몇 개 실제로 입증했는지로 정렬한다. 언급 횟수가 아니다.
-    places.sort((a, b) => b.score - a.score);
+    // 네이버가 준 순서가 아니라, 근거가 몇 개 잡혔는지로 다시 세운다.
+    places.sort((a, b) => b.rank - a.rank);
 
     return json({
       query: q,
       asked: asked.map(a => a.key),
+      region,
+      regionFrom,
       origin: Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null,
       places,
       collectedAt: new Date().toISOString(),

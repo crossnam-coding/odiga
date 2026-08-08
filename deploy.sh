@@ -11,20 +11,20 @@ cd "$(dirname "$0")"
 
 V=$(date +%Y%m%d%H%M)
 
-rm -rf dist && mkdir -p dist/assets dist/data dist/img dist/functions/api
+rm -rf dist && mkdir -p dist/assets dist/functions/api
 sed -e "s|assets/app.css|assets/app.css?v=$V|" \
     -e "s|assets/app.js|assets/app.js?v=$V|" index.html > dist/index.html
-cp assets/app.css assets/app.js  dist/assets/
-cp data/places.json              dist/data/
-cp img/songwon1.jpg img/songwon3.jpg img/narin2.jpg dist/img/
-cp functions/api/search.js       dist/functions/api/
+cp assets/app.css assets/app.js assets/regions.js dist/assets/
+cp functions/api/*.js            dist/functions/api/
 
 cat > dist/_headers <<'EOF'
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
+/
+  Cache-Control: no-cache, must-revalidate
 /index.html
-  Cache-Control: no-cache
+  Cache-Control: no-cache, must-revalidate
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 EOF

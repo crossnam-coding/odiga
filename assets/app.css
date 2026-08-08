@@ -105,3 +105,15 @@ body{margin:0;background:var(--ground);color:var(--ink);line-height:1.55;
 .empty{text-align:center;color:var(--muted);font-size:14px;padding:26px 10px}
 .foot{font-size:11.5px;color:var(--muted);line-height:1.7;padding:0 4px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+
+/* 근거 구분 — "좋은 집인가"와 "조건에 맞는가"는 다른 질문이다 */
+.evhd{font-size:10.5px;font-weight:700;letter-spacing:.07em;color:var(--muted);
+  display:block;margin-bottom:2px}
+.evhd.none{color:var(--caution);font-weight:600;letter-spacing:0;font-size:12.5px}
+.ev.good{background:var(--accent-soft);border-radius:10px;padding:10px 11px;border-top:none}
+.ev.good .evhd{color:var(--accent)}
+.ev.good q{color:var(--ink)}
+/* 광고처럼 읽히는 문장 표시 — 지우지 않고 판단은 사람에게 남긴다 */
+.adflag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:99px;
+  background:var(--caution-soft);color:var(--caution);font-size:9.5px;font-weight:700;
+  letter-spacing:0;vertical-align:middle}
