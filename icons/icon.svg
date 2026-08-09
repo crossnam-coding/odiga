@@ -1,0 +1,12 @@
+<!-- 어디가지 홈화면 아이콘 원본.
+     PNG 는 이 파일에서 생성한다 (tools/icons.sh). 직접 PNG 를 고치지 말 것.
+     핀 = 장소, 안의 체크 = "근거를 확인했다". 앱 한 줄 설명이 "광고 말고 근거로" 라서
+     핀만 있으면 흔한 지도앱과 구분이 안 된다. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="114" fill="#2f6b4f"/>
+  <path d="M256 66c-74 0-134 60-134 134 0 96 134 246 134 246s134-150 134-246c0-74-60-134-134-134z"
+        fill="#ffffff"/>
+  <circle cx="256" cy="196" r="74" fill="#2f6b4f"/>
+  <path d="M218 196l26 27 55-58" fill="none" stroke="#ffffff"
+        stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

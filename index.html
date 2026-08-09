@@ -8,9 +8,14 @@
 <meta name="theme-color" content="#2f6b4f" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#12150f" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="어디가지">
 <link rel="stylesheet" href="assets/app.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍚</text></svg>">
+<link rel="manifest" href="manifest.webmanifest">
+<!-- iOS 는 manifest 의 icons 를 홈화면 아이콘으로 쓰지 않는다. apple-touch-icon 이 없으면
+     화면을 축소한 스크린샷이 아이콘이 되어 무슨 앱인지 알아볼 수 없다. -->
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 </head>
 <body>
 <div class="wrap">
@@ -48,20 +53,28 @@
     <button type="button" class="go" id="goBtn">찾아줘</button>
   </section>
 
+  <!-- 홈화면에 깔라는 안내. 설치 여부·브라우저 종류를 app.js 가 보고 필요할 때만 연다.
+       2026-08-08 실측: 배포 후 5일간 사용 0회였고 이유는 "아예 안 열었다" 였다.
+       기능이 아니라 진입점이 없어서 안 쓴 것이라, 이 배너가 이 화면에서 제일 중요하다.
+       결과 아래에 두면 카드 5장에 가려 안 보인다 — 반드시 결과보다 위. -->
+  <div class="install" id="install" hidden></div>
+
   <div class="note" id="notice" hidden></div>
 
   <section class="results" id="results" aria-live="polite"></section>
 
   <div class="note">
-    <b>지금 되는 것 / 안 되는 것</b>
-    <span>✅ 내 위치 · 이동수단 · 시간 반경 · 거리 계산 · 근거 링크 — <b>전부 진짜로 동작</b></span>
-    <span>⏳ 조건을 넣으면 블로그를 새로 읽는 <b>실시간 검색</b> — 네이버 검색 키 붙이면 열림</span>
+    <b>어떻게 고르는지</b>
+    <span>네이버가 준 노출 순서를 그대로 쓰지 않아. 블로그 <b>본문을 직접 열어</b> 재방문·비교·현지·단점인정 같은 문장을 근거로 세고 다시 정렬해.</span>
+    <span>협찬인지 아닌지는 <b>판별하지 않아</b>(표기가 본문의 14%에만 있어서 안 돼). 대신 협찬 글이 못 쓰는 정보 — 콘센트·에어컨·체류시간·가격·주차 — 만 봐.</span>
+    <span>근거를 못 찾으면 <b>지어내지 않고</b> "근거 못 찾았어"라고 적어.</span>
   </div>
 
   <p class="foot">
     거리는 직선거리 × 1.35 도로보정 · 도보 4.5km/h · 차 38km/h + 주차 2분 기준의 <b>추정치</b>야.<br>
     근거는 네이버 블로그 본문을 직접 읽어 뽑았고, 인용에 날짜와 원문 링크를 항상 같이 붙여.<br>
-    위치는 이 브라우저 안에서만 쓰고 아무 데도 보내지 않아.
+    위치는 이 브라우저 안에서만 쓰고 아무 데도 보내지 않아.<br>
+    <span id="useCount" class="uses"></span>
   </p>
 
 </div>

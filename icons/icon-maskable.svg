@@ -1,0 +1,13 @@
+<!-- 안드로이드 maskable 용. 런처가 아이콘을 원/스퀘어클 등으로 잘라내기 때문에
+     안전 영역(가운데 지름 80%) 안에만 그림이 들어가야 한다.
+     icon.svg 를 그대로 쓰면 핀 아래쪽이 잘린다. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" fill="#2f6b4f"/>
+  <g transform="translate(256 256) scale(0.62) translate(-256 -256)">
+    <path d="M256 66c-74 0-134 60-134 134 0 96 134 246 134 246s134-150 134-246c0-74-60-134-134-134z"
+          fill="#ffffff"/>
+    <circle cx="256" cy="196" r="74" fill="#2f6b4f"/>
+    <path d="M218 196l26 27 55-58" fill="none" stroke="#ffffff"
+          stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

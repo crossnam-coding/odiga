@@ -1,0 +1,18 @@
+{
+  "id": "/",
+  "name": "어디가지",
+  "short_name": "어디가지",
+  "description": "광고 말고 근거로. 조건으로 갈 곳을 찾고 왜 그런지 원문 링크까지 같이 봅니다.",
+  "lang": "ko",
+  "dir": "ltr",
+  "start_url": "/?src=home",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#12150f",
+  "theme_color": "#2f6b4f",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

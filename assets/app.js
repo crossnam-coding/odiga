@@ -1,7 +1,9 @@
 import { findRegion } from "./regions.js";
 
 // 어디가지 — 조건으로 찾는 장소
-// v0: 위치·이동수단·반경은 실제 동작. 실시간 검색은 백엔드(네이버 검색 키) 연결 후.
+// 위치·이동수단·반경·실시간 검색 전부 동작한다.
+// (2026-08-08 정정: 여기와 화면 하단에 "실시간 검색은 키 붙이면 열림"이라고 적혀 있었는데
+//  키는 8/3에 붙었고 그때부터 동작 중이었다. 앱이 자기 기능을 못 쓴다고 광고하고 있었다.)
 
 const MODES = {
   walk: { label: '걸어서', kmh: 4.5, fixed: 0, max: 30, step: 5, def: 15 },
@@ -17,6 +19,99 @@ const state = {
 };
 
 const $ = (s) => document.querySelector(s);
+
+/* ── 얼마나 쓰는가 ──
+   이 앱의 판정 기준은 매출이 아니라 "몇 번 여는가"인데, 8/3 배포 후 5일 동안 그걸 셀 장치가
+   없어서 사용 여부를 사람 기억에 물어봐야 했다(답: 0회, 아예 안 열었음).
+   그래서 브라우저 안에 직접 센다. 서버로 아무것도 보내지 않는다 — 지인 공유 단계가 되면
+   그때 서버 집계를 따로 설계한다. */
+const USE_KEY = 'odiga.use.v1';
+
+// 홈화면에서 연 건지 브라우저로 연 건지 나눠 센다.
+// "설치가 실제로 사용을 만들었나"가 이번 변경의 판정 질문이라, 이걸 안 나누면 답이 안 나온다.
+const fromHome = () =>
+  window.matchMedia('(display-mode: standalone)').matches ||
+  window.navigator.standalone === true ||
+  new URLSearchParams(location.search).get('src') === 'home';
+
+const loadUses = () => { try { return JSON.parse(localStorage.getItem(USE_KEY)) || []; } catch { return []; } };
+
+function logUse(kind) {
+  const l = loadUses();
+  l.push({ t: new Date().toISOString(), k: kind, h: fromHome() });
+  // 무한히 쌓으면 저장 한도에 걸린다. 판정에 필요한 건 최근 몇 달치다.
+  try { localStorage.setItem(USE_KEY, JSON.stringify(l.slice(-400))); } catch {}
+  showUses();
+}
+
+function showUses() {
+  const el = $('#useCount');
+  if (!el) return;
+  const now = new Date();
+  const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const m = loadUses().filter((u) => (u.t || '').startsWith(ym));
+  const opens = m.filter((u) => u.k === 'open').length;
+  const finds = m.filter((u) => u.k === 'search').length;
+  const home  = m.filter((u) => u.h).length;
+  el.textContent = opens || finds
+    ? `이번 달 ${opens}번 열고 ${finds}번 찾았어${home ? ` · 홈화면에서 ${home}번` : ''}`
+    : '';
+}
+
+/* ── 홈화면에 깔기 ──
+   5일간 0회의 원인은 기능이 아니라 진입점이었다. 주소를 기억해서 브라우저에 치는 일이
+   일어나지 않았다. 아이콘이 홈화면에 있으면 그 단계가 사라진다. */
+const SNOOZE_KEY = 'odiga.install.snooze';
+let installPrompt = null;
+
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);   // iPadOS는 맥으로 위장한다
+
+function snooze(days) {
+  try { localStorage.setItem(SNOOZE_KEY, String(Date.now() + days * 864e5)); } catch {}
+  $('#install').hidden = true;
+}
+
+function showInstall() {
+  const el = $('#install');
+  if (!el) return;
+  // 이미 깔았으면 볼 이유가 없다.
+  if (fromHome()) { el.hidden = true; return; }
+  if (Date.now() < (+localStorage.getItem(SNOOZE_KEY) || 0)) { el.hidden = true; return; }
+
+  // 크롬 계열은 브라우저가 직접 설치창을 띄워준다. 그 외(사파리)는 손으로 하는 수밖에 없다.
+  const how = installPrompt
+    ? '<p>아래 버튼 한 번이면 홈화면에 아이콘이 생겨.</p>'
+    : isIOS
+      ? '<p>사파리 아래쪽 <kbd>공유</kbd> → <kbd>홈 화면에 추가</kbd> 를 누르면 아이콘이 생겨.</p>'
+      : '<p>브라우저 메뉴(⋮) → <kbd>홈 화면에 추가</kbd> 또는 <kbd>앱 설치</kbd> 를 누르면 아이콘이 생겨.</p>';
+
+  el.innerHTML = `<b>홈화면에 깔아두자</b>
+    <p>주소를 기억해서 치는 동안엔 안 열게 돼. 아이콘이 있으면 한 번에 열려.</p>
+    ${how}
+    <div class="row">
+      ${installPrompt ? '<button type="button" class="p" id="insBtn">홈화면에 추가</button>' : ''}
+      <button type="button" id="insLater">나중에</button>
+    </div>`;
+  el.hidden = false;
+
+  $('#insLater').addEventListener('click', () => snooze(7));   // 영구히 지우지 않는다. 일주일 뒤 다시 묻는다
+  $('#insBtn')?.addEventListener('click', async () => {
+    const p = installPrompt;
+    installPrompt = null;
+    el.hidden = true;
+    p.prompt();
+    const { outcome } = await p.userChoice;
+    if (outcome !== 'accepted') snooze(3);
+  });
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();          // 브라우저 기본 배너를 막고 우리 배너에서 띄운다
+  installPrompt = e;
+  showInstall();
+});
+window.addEventListener('appinstalled', () => { $('#install').hidden = true; logUse('install'); });
 
 /* ── 거리 ── */
 function haversine(a, b) {
@@ -225,6 +320,7 @@ async function search() {
       ${d.regionFrom === '현재 위치' ? '지역은 <b>현재 위치</b>에서 잡았어. ' : ''}
       인용은 실제 블로그 본문에서 뽑았고 날짜·링크가 붙어 있어.</span>`;
     render();
+    logUse('search');   // 결과가 실제로 나온 것만 센다. 오타·실패는 사용이 아니다
     $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {
     n.innerHTML = `<b>검색이 실패했어.</b><span>${esc(e.message)} — 잠시 뒤 다시 눌러줘.</span>`;
@@ -265,6 +361,9 @@ async function init() {
     b.addEventListener('click', () =>
       setOrigin(+b.dataset.lat, +b.dataset.lng, b.textContent)));
   $('#radOut').textContent = `${MODES.car.label} ${state.minutes}분`;
+
+  logUse('open');
+  showInstall();   // beforeinstallprompt 가 안 오는 브라우저(사파리)에서도 안내는 떠야 한다
 
   // 미리 저장해둔 목록을 먼저 띄우지 않는다.
   // 8/3 가평 데이터를 초기 화면에 뿌렸더니 다른 동네에서 열어도 가평이 나와,

@@ -13,3 +13,4 @@ prototype.html
 .env.*
 dist/
 .wrangler/
+.dev.vars

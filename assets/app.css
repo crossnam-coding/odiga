@@ -102,6 +102,23 @@ body{margin:0;background:var(--ground);color:var(--ink);line-height:1.55;
 .note{background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:13px 15px;
   font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
 .note b{color:var(--ink)}
+
+/* ── 홈화면 설치 안내 ──
+   눈에 띄어야 한다. 이 앱이 5일간 0회 열린 이유가 기능이 아니라 진입점이었다. */
+.install{background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 32%,transparent);
+  border-radius:14px;padding:13px 15px;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.install b{color:var(--ink);font-size:14px}
+.install p{margin:0;color:var(--muted);line-height:1.6}
+.install kbd{font:inherit;font-weight:700;color:var(--ink);background:var(--card);
+  border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+.install .row{display:flex;gap:7px;margin-top:2px}
+.install button{flex:1;min-height:42px;border-radius:11px;font:inherit;font-size:14px;
+  font-weight:700;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.install button.p{background:var(--accent);color:var(--ground);border-color:transparent}
+.install button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* 사용 횟수. 이 앱의 판정 기준이 매출이 아니라 "오빠가 몇 번 여는가" 라서 화면에 띄워둔다. */
+.uses{display:inline-block;margin-top:5px;color:var(--accent);font-weight:700}
 .empty{text-align:center;color:var(--muted);font-size:14px;padding:26px 10px}
 .foot{font-size:11.5px;color:var(--muted);line-height:1.7;padding:0 4px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
