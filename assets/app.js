@@ -113,6 +113,15 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 window.addEventListener('appinstalled', () => { $('#install').hidden = true; logUse('install'); });
 
+/* ── 하늘 ──
+   앞유리 너머를 지금 시각에 맞춘다. 아침엔 해가 낮게, 저녁엔 해가 내려앉고 별이 옅게,
+   밤엔 달과 별. 그림은 이미 씬 안에 다 있고 여기서는 어느 것을 보여줄지만 고른다. */
+function setSky() {
+  const h = new Date().getHours();
+  const t = h < 6 ? 'night' : h < 10 ? 'dawn' : h < 17 ? 'day' : h < 20 ? 'dusk' : 'night';
+  document.querySelector('.scene')?.setAttribute('data-time', t);
+}
+
 /* ── 거리 ── */
 function haversine(a, b) {
   const R = 6371, rad = (d) => (d * Math.PI) / 180;
@@ -229,7 +238,17 @@ function render() {
   const box = $('#results');
   box.innerHTML = '';
   if (!state.places.length) {
-    box.innerHTML = '<p class="empty">조건을 넣고 찾아줘를 눌러봐</p>';
+    // 비어 있는 자리라 연출을 놓아도 아무것도 늦추지 않는다.
+    box.innerHTML = `<p class="empty">
+      <svg viewBox="0 0 120 76" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <ellipse cx="60" cy="46" rx="31" ry="11"/>
+        <ellipse cx="60" cy="43" rx="21" ry="7" opacity=".45"/>
+        <path d="M20 26 v13 c0 3 2 5 5 5 v14" opacity=".7"/>
+        <path d="M17 26 v10 M23 26 v10" opacity=".4"/>
+        <path d="M100 26 c4 3 4 11 0 14 v18" opacity=".7"/>
+      </svg>
+      <span>조건을 적고 돋보기를 눌러봐</span></p>`;
     return;
   }
   // 위치를 못 잡았어도 결과는 보여준다. 거리만 빠진다.
@@ -285,6 +304,8 @@ async function search() {
   const lab = $('#goLabel');
   const label = lab.textContent;
   lab.textContent = '블로그 읽는 중…';
+  setSky();                                    // 자정을 넘겨 열어둔 경우를 위해 여기서도 맞춘다
+  $('.scene')?.classList.add('searching');     // 앞유리 중앙선이 흐른다
   n.hidden = false;
   n.innerHTML = `<b>${region ? esc(region) + ' 근처에서' : '지금 있는 곳 근처에서'} 찾는 중</b>
     <span>후보를 잡고 블로그 본문을 열어 조건별 근거를 뽑고 있어. 10초쯤 걸려.</span>`;
@@ -330,6 +351,7 @@ async function search() {
   } finally {
     btn.disabled = false;
     lab.textContent = label;
+    $('.scene')?.classList.remove('searching');
   }
 }
 
@@ -365,6 +387,7 @@ async function init() {
       setOrigin(+b.dataset.lat, +b.dataset.lng, b.textContent)));
   $('#radOut').textContent = `${MODES.car.label} ${state.minutes}분`;
 
+  setSky();
   logUse('open');
   showInstall();   // beforeinstallprompt 가 안 오는 브라우저(사파리)에서도 안내는 떠야 한다
 

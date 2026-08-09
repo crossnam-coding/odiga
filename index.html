@@ -73,7 +73,25 @@
           <path d="M32 132 C 70 46, 330 46, 368 132" opacity=".2"/>
           <path d="M48 112 l32-16 26 11 34-18 30 15 26-11 30 15 28-10 26 13" opacity=".3"/>
           <path d="M170 148 l22-42 M230 148 l-22-42" opacity=".3"/>
-          <path d="M200 110 v-10 M200 90 v-8 M200 74 v-6" opacity=".24"/>
+          <!-- 중앙선. 찾는 동안 아래로 흐른다 — 가고 있다는 느낌 -->
+          <path class="road" d="M200 116 V62" stroke-dasharray="9 11" opacity=".28"/>
+
+          <!-- 하늘. 지금 몇 시냐에 따라 해가 뜨고 지고 별이 뜬다.
+               app.js 가 .scene[data-time] 을 놓고 CSS 가 골라 보여준다. -->
+          <g class="sky">
+            <g class="sun">
+              <circle cx="304" cy="72" r="13" opacity=".5"/>
+              <path d="M304 51 v-7 M304 100 v7 M283 72 h-7 M325 72 h7
+                       M289 57 l-5-5 M319 87 l5 5 M319 57 l5-5 M289 87 l-5 5" opacity=".3"/>
+            </g>
+            <g class="moon">
+              <path d="M310 60 a15 15 0 1 0 12 22 12 12 0 0 1-12-22z" opacity=".5"/>
+            </g>
+            <g class="stars" opacity=".45">
+              <path d="M96 62 v6 M93 65 h6 M150 48 v5 M147.5 50.5 h5
+                       M252 54 v5 M249.5 56.5 h5 M118 86 v4 M116 88 h4"/>
+            </g>
+          </g>
 
           <!-- 대시보드 상판 — 여기부터가 테이블이다 -->
           <path d="M0 690 L0 172 C 100 152, 300 152, 400 172 L400 690" opacity=".85"/>
@@ -115,7 +133,7 @@
       <!-- 클래스명 주의: .note 는 아래 "어떻게 고르는지" 안내 박스가 이미 쓰는 이름이다.
            여기에 .note 를 붙였더니 그쪽 규칙이 괘선·padding 을 통째로 덮었다(2026-08-09). -->
       <textarea id="q" class="hot notepad"
-        placeholder="어머니 모시고 2인, 1인 2만원 안쪽.&#10;조미료 적고 집에서 해먹기 번거로운 거."></textarea>
+        placeholder="엄마랑 저녁. 75세라 자극적이지 않은 한식.&#10;주차 되고 조용한 데면 좋겠어."></textarea>
 
       <!-- 지도 위 반경. 사물이 라벨을 대신하므로 "얼마나 멀리까지" 글자는 두지 않는다 -->
       <div class="hot radbox">

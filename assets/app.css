@@ -43,6 +43,25 @@ body{margin:0;background:var(--ground);color:var(--ink);line-height:1.55;
 :root[data-theme=dark] .scene-art{opacity:.62}
 .hot{position:absolute;margin:0}
 
+/* ── 하늘 ── 지금 몇 시냐에 따라 앞유리 너머가 바뀐다.
+   앱이 나를 알아본다는 느낌이 이 한 줄에서 나온다. 자산은 더 받지 않는다(SVG 몇 줄). */
+.sky > g{display:none}
+.scene[data-time=dawn] .sun,
+.scene[data-time=day]  .sun,
+.scene[data-time=dusk] .sun{display:block}
+.scene[data-time=night] .moon,
+.scene[data-time=night] .stars,
+.scene[data-time=dusk]  .stars{display:block}
+/* 아침·저녁엔 해가 능선 가까이 내려앉는다 */
+.scene[data-time=dawn] .sun,
+.scene[data-time=dusk] .sun{transform:translateY(24px)}
+.scene[data-time=dusk] .stars{opacity:.22}
+
+/* 찾는 동안 중앙선이 흐른다 — 가고 있다는 신호 */
+.scene.searching .road{animation:road .7s linear infinite}
+@keyframes road{to{stroke-dashoffset:-20}}
+@media (prefers-reduced-motion:reduce){.scene.searching .road{animation:none}}
+
 /* 앞유리 너머 = 지금 내가 어디 있는지.
    아치는 아래로 갈수록 넓다. 위쪽에 두면 긴 문구가 유리 밖으로 삐져나온다(2026-08-09 실측). */
 .loc{left:9%;right:9%;top:11.6%;display:flex;flex-direction:column;align-items:center;gap:1px;
@@ -151,7 +170,9 @@ body{margin:0;background:var(--ground);color:var(--ink);line-height:1.55;
 
 /* 사용 횟수. 이 앱의 판정 기준이 매출이 아니라 "오빠가 몇 번 여는가" 라서 화면에 띄워둔다. */
 .uses{display:inline-block;margin-top:5px;color:var(--accent);font-weight:700}
-.empty{text-align:center;color:var(--muted);font-size:14px;padding:26px 10px}
+.empty{text-align:center;color:var(--muted);font-size:14px;padding:18px 10px 26px;
+  display:flex;flex-direction:column;align-items:center;gap:8px}
+.empty svg{width:104px;height:66px;opacity:.5}
 .foot{font-size:11.5px;color:var(--muted);line-height:1.7;padding:0 4px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 
