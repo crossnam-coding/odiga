@@ -113,6 +113,60 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 window.addEventListener('appinstalled', () => { $('#install').hidden = true; logUse('install'); });
 
+/* ── 글로브박스 ── 늘 챙길 조건
+   `프로필.md` 에 오빠가 적어둔 조건을 매번 손으로 다시 쓰지 않게 한다.
+   서버에 보내 저장하지 않는다 — 검색할 때 파라미터로 함께 보낼 뿐이고,
+   취향은 이 브라우저 안에만 있다. 지인이 같이 써도 각자 자기 것이 된다. */
+const PROFILE_KEY = 'odiga.profile.v1';
+
+// 키는 서버 ASPECTS 와 같은 말을 써야 한다. 다르면 조용히 무시된다.
+const ASPECT_LIST = [
+  { k: '저자극', d: '조미료 적고 담백' },
+  { k: '어르신', d: '어르신 편한 자리' },
+  { k: '주차',   d: '주차 되는 곳' },
+  { k: '작업',   d: '콘센트·노트북' },
+  { k: '에어컨', d: '시원한지' },
+  { k: '체류',   d: '오래 앉아도 되는지' },
+  { k: '뷰',     d: '전망' },
+];
+// `프로필.md` 의 모드별 조건 그대로.
+const PRESETS = {
+  mom:  ['저자극', '어르신', '주차'],
+  work: ['작업', '에어컨', '체류'],
+  none: [],
+};
+// A1 "조미료 많이 쓰는 곳 제외"는 모든 검색에 적용이라고 적혀 있다. 그래서 처음부터 켜둔다.
+const DEFAULT_PROFILE = ['저자극'];
+
+function loadProfile() {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if (raw === null) return [...DEFAULT_PROFILE];   // 아직 안 만짐 ≠ 비워둠
+    const v = JSON.parse(raw);
+    return Array.isArray(v) ? v.filter((k) => ASPECT_LIST.some((a) => a.k === k)) : [];
+  } catch { return [...DEFAULT_PROFILE]; }
+}
+function saveProfile(list) {
+  try { localStorage.setItem(PROFILE_KEY, JSON.stringify(list)); } catch {}
+  drawProfile();
+}
+
+function drawProfile() {
+  const on = loadProfile();
+  const box = $('#chips');
+  if (box) {
+    box.innerHTML = ASPECT_LIST.map((a) => `
+      <button type="button" data-k="${a.k}" aria-pressed="${on.includes(a.k)}">
+        <strong>${a.k}</strong><span>${a.d}</span></button>`).join('');
+    box.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+      const k = b.dataset.k, cur = loadProfile();
+      saveProfile(cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k]);
+    }));
+  }
+  const n = $('#gloveN');
+  if (n) { n.textContent = on.length || ''; n.classList.toggle('on', on.length > 0); }
+}
+
 /* ── 하늘 ──
    앞유리 너머를 지금 시각에 맞춘다. 아침엔 해가 낮게, 저녁엔 해가 내려앉고 별이 옅게,
    밤엔 달과 별. 그림은 이미 씬 안에 다 있고 여기서는 어느 것을 보여줄지만 고른다. */
@@ -284,6 +338,12 @@ const pickRegion = (q) => findRegion(q);
 
 function esc(s) { return String(s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c])); }
 
+// 받침에 따라 조사를 고른다. "어르신는"처럼 나오면 사람이 쓴 글로 안 읽힌다.
+function josa(word, withJong, without) {
+  const c = (word || '').charCodeAt((word || '').length - 1) - 0xac00;
+  return (c >= 0 && c <= 11171 && c % 28 !== 0) ? withJong : without;
+}
+
 async function search() {
   const q = $('#q').value.trim();
   const n = $('#notice');
@@ -314,6 +374,8 @@ async function search() {
     const p = new URLSearchParams({ q });
     if (region) p.set('region', region);
     if (state.origin) { p.set('lat', state.origin.lat); p.set('lng', state.origin.lng); }
+    const prof = loadProfile();
+    if (prof.length) p.set('with', prof.join(','));   // 글로브박스에 켜둔 조건
     const r = await fetch(`/api/search?${p}`);
     const d = await r.json();
     if (!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);
@@ -339,8 +401,13 @@ async function search() {
       photos: [],
     }));
 
+    // 글로브박스에서 붙은 조건은 따로 밝힌다. 안 밝히면 결과가 왜 이런지 알 수 없다.
+    const fp = d.fromProfile || [];
+    const auto = fp.length
+      ? `이 중 <b>${esc(fp.join(' · '))}</b>${josa(fp[fp.length - 1], '은', '는')} `
+        + `글로브박스에서 자동으로 붙었어. ` : '';
     n.innerHTML = `<b>${esc(d.region)} · ${d.places.length}곳</b>
-      <span>조건 <b>${d.asked.join(' · ') || '없음'}</b> 기준.
+      <span>조건 <b>${d.asked.join(' · ') || '없음'}</b> 기준. ${auto}
       ${d.regionFrom === '현재 위치' ? '지역은 <b>현재 위치</b>에서 잡았어. ' : ''}
       인용은 실제 블로그 본문에서 뽑았고 날짜·링크가 붙어 있어.</span>`;
     render();
@@ -386,6 +453,17 @@ async function init() {
     b.addEventListener('click', () =>
       setOrigin(+b.dataset.lat, +b.dataset.lng, b.textContent)));
   $('#radOut').textContent = `${MODES.car.label} ${state.minutes}분`;
+
+  // 글로브박스 여닫기 + 프리셋
+  $('#gloveBtn').addEventListener('click', () => {
+    const box = $('#glovebox'), open = box.hidden;
+    box.hidden = !open;
+    $('#gloveBtn').setAttribute('aria-expanded', String(open));
+    if (open) box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+  document.querySelectorAll('#presets button').forEach((b) =>
+    b.addEventListener('click', () => saveProfile([...PRESETS[b.dataset.preset]])));
+  drawProfile();
 
   setSky();
   logUse('open');

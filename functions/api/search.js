@@ -205,6 +205,9 @@ export async function onRequestGet({ request, env }) {
   const lat   = parseFloat(u.searchParams.get('lat'));
   const lng   = parseFloat(u.searchParams.get('lng'));
   let region  = (u.searchParams.get('region') || '').trim();
+  // 글로브박스에 넣어둔 조건. 매번 손으로 다시 쓰지 않게 브라우저가 붙여 보낸다.
+  // 서버는 프로필을 저장하지 않는다 — 오빠 취향은 오빠 기기 밖으로 나가지 않는다.
+  const withKeys = (u.searchParams.get('with') || '').split(',').map((s) => s.trim()).filter(Boolean);
 
   const json = (body, status = 200) => new Response(JSON.stringify(body), {
     status,
@@ -217,8 +220,11 @@ export async function onRequestGet({ request, env }) {
     return json({ error: '서버에 네이버 검색 키가 설정되지 않았어' }, 500);
   }
 
-  // 사용자가 실제로 물어본 조건만 남긴다. 안 물어본 건 채우지 않는다.
-  const asked = ASPECTS.filter((a) => a.ask.test(q));
+  // 사용자가 실제로 물어본 조건 + 글로브박스에 켜둔 조건.
+  // 추측으로 채우는 게 아니라 둘 다 사용자가 말한 것이다 — 하나는 지금, 하나는 미리.
+  // 어느 쪽에서 왔는지는 응답에 나눠 담아 화면이 구분해 보여줄 수 있게 한다.
+  const asked = ASPECTS.filter((a) => a.ask.test(q) || withKeys.includes(a.key));
+  const fromProfile = asked.filter((a) => !a.ask.test(q)).map((a) => a.key);
 
   // 지역명을 안 썼으면 위치에서 뽑는다.
   let regionFrom = region ? '입력' : null;
@@ -256,7 +262,7 @@ export async function onRequestGet({ request, env }) {
       })
       .slice(0, 6);
 
-    if (!cands.length) return json({ query: q, asked: asked.map(a => a.key), places: [] });
+    if (!cands.length) return json({ query: q, asked: asked.map(a => a.key), fromProfile, places: [] });
 
     // 2) 각 후보의 근거를 블로그 본문에서 뽑는다.
     const places = await Promise.all(cands.map(async (c) => {
@@ -356,6 +362,7 @@ export async function onRequestGet({ request, env }) {
     return json({
       query: q,
       asked: asked.map(a => a.key),
+      fromProfile,
       region,
       regionFrom,
       origin: Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null,

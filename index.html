@@ -113,6 +113,10 @@
           <circle cx="356" cy="304" r="12" opacity=".3"/>
           <path d="M374 297 c8 0 11 3 11 7 s-3 7-11 7" opacity=".45"/>
 
+          <!-- 글로브박스 — 늘 챙길 조건을 넣어두는 서랍. 조수석 앞이라 여기 있는 게 맞다 -->
+          <path d="M334 330 h52 v48 h-52 z" opacity=".55"/>
+          <path d="M344 356 h32" opacity=".5" stroke-width="2.6"/>
+
           <!-- 접힌 지도 — 얼마나 멀리까지 -->
           <path d="M26 402 l24-7 25 7 25-7 v60 l-25 7-25-7-24 7z" opacity=".8"/>
           <path d="M50 395 v60 M75 402 v60" opacity=".35"/>
@@ -151,9 +155,27 @@
           <span>걸어서</span></button>
       </div>
 
+      <!-- 글로브박스 열기. 켜둔 조건 개수를 배지로 보여준다 -->
+      <button type="button" class="hot glove" id="gloveBtn"
+              aria-expanded="false" aria-controls="glovebox" aria-label="늘 챙길 조건">
+        <span class="glove-n" id="gloveN"></span></button>
+
       <!-- 돋보기. 라벨은 span 으로 분리한다 — 버튼에 textContent 를 대입하면 아이콘이 지워진다 -->
       <button type="button" class="hot go" id="goBtn">
         <svg viewBox="0 0 48 48" aria-hidden="true"><use href="#i-lens"/></svg><span id="goLabel">찾아줘</span></button>
+    </div>
+
+    <!-- 글로브박스 속. 여기 켜둔 조건은 매번 안 써도 검색에 자동으로 붙는다.
+         서버에 저장하지 않는다 — 오빠 취향은 이 브라우저 밖으로 나가지 않는다. -->
+    <div class="glovebox" id="glovebox" hidden>
+      <b>늘 챙길 조건</b>
+      <p>여기 켜두면 매번 안 적어도 자동으로 같이 봐. 이 폰 안에만 저장돼.</p>
+      <div class="presets" id="presets">
+        <button type="button" data-preset="mom">엄마랑</button>
+        <button type="button" data-preset="work">혼자 작업</button>
+        <button type="button" data-preset="none">비우기</button>
+      </div>
+      <div class="chips" id="chips"></div>
     </div>
   </section>
 
