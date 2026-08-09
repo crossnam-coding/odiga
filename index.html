@@ -109,13 +109,18 @@
 
           <!-- 커피 — 오래 앉아있기. 위에서 내려다본 컵이라 김은 그리지 않는다(위에서는 안 보인다).
                손잡이가 있어야 컵으로 읽힌다. -->
-          <circle cx="356" cy="304" r="18" opacity=".55"/>
-          <circle cx="356" cy="304" r="12" opacity=".3"/>
-          <path d="M374 297 c8 0 11 3 11 7 s-3 7-11 7" opacity=".45"/>
+          <circle cx="356" cy="294" r="17" opacity=".55"/>
+          <circle cx="356" cy="294" r="11" opacity=".3"/>
+          <path d="M373 288 c8 0 10 3 10 6 s-2 6-10 6" opacity=".45"/>
 
-          <!-- 글로브박스 — 늘 챙길 조건을 넣어두는 서랍. 조수석 앞이라 여기 있는 게 맞다 -->
-          <path d="M334 330 h52 v48 h-52 z" opacity=".55"/>
-          <path d="M344 356 h32" opacity=".5" stroke-width="2.6"/>
+          <!-- 글로브박스 — 늘 챙길 조건을 넣어두는 서랍. 조수석 앞이라 여기 있는 게 맞다.
+               닫힌 네모로 그렸더니 오빠가 못 찾았다(2026-08-09). 사물이 메뉴를 대신하려면
+               "여기 뭔가 들어 있다"가 그림만으로 보여야 한다 — 살짝 열어두고 안을 보여준다. -->
+          <path d="M330 320 h62 v32 h-62 z" opacity=".38"/>
+          <path d="M337 325 h22 v22 h-22 z" opacity=".5"/>
+          <path d="M364 325 h20 v22 h-20 z" opacity=".33"/>
+          <path d="M328 348 h66 v30 h-66 z" opacity=".8"/>
+          <path d="M347 362 h28" opacity=".6" stroke-width="3"/>
 
           <!-- 접힌 지도 — 얼마나 멀리까지 -->
           <path d="M26 402 l24-7 25 7 25-7 v60 l-25 7-25-7-24 7z" opacity=".8"/>
@@ -155,10 +160,11 @@
           <span>걸어서</span></button>
       </div>
 
-      <!-- 글로브박스 열기. 켜둔 조건 개수를 배지로 보여준다 -->
+      <!-- 글로브박스 열기. 그림만으로는 못 찾아서 라벨을 붙였다(2026-08-09 오빠가 못 찾음).
+           씬에서 유일하게 글자를 단 사물이지만, 못 찾는 메뉴는 없는 메뉴다. -->
       <button type="button" class="hot glove" id="gloveBtn"
-              aria-expanded="false" aria-controls="glovebox" aria-label="늘 챙길 조건">
-        <span class="glove-n" id="gloveN"></span></button>
+              aria-expanded="false" aria-controls="glovebox">
+        <span class="glove-lab">내 조건<b class="glove-n" id="gloveN"></b></span></button>
 
       <!-- 돋보기. 라벨은 span 으로 분리한다 — 버튼에 textContent 를 대입하면 아이콘이 지워진다 -->
       <button type="button" class="hot go" id="goBtn">

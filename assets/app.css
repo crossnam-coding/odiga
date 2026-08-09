@@ -101,14 +101,16 @@ body{margin:0;background:var(--ground);color:var(--ink);line-height:1.55;
 .modes button:focus-visible span{opacity:1}
 .modes button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px}
 
-/* 글로브박스 = 늘 챙길 조건 서랍. 씬 좌표 x334~386 y330~378 */
-.glove{left:83.5%;top:47.8%;width:13%;height:7%;
+/* 글로브박스 = 늘 챙길 조건 서랍. 씬 좌표 x328~394 y320~378, 라벨은 그 아래 */
+.glove{left:81%;top:46.4%;width:17%;height:13%;
   border:none;background:none;cursor:pointer;padding:0;
-  display:flex;align-items:center;justify-content:center}
-.glove-n{font-size:11px;font-weight:800;color:var(--accent);
-  background:var(--accent-soft);border-radius:99px;padding:1px 7px;opacity:0;transition:opacity .14s}
+  display:flex;align-items:flex-end;justify-content:center}
+.glove-lab{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:700;
+  color:var(--accent);white-space:nowrap}
+.glove-n{font-size:10.5px;font-weight:800;color:var(--ground);background:var(--accent);
+  border-radius:99px;min-width:16px;padding:0 5px;line-height:16px;text-align:center;
+  opacity:0;transition:opacity .14s}
 .glove-n.on{opacity:1}
-.glove[aria-expanded=true] .glove-n{opacity:1}
 .glove:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
 
 .glovebox{margin:10px 0 0;background:var(--card);border:1px solid var(--line);border-radius:14px;

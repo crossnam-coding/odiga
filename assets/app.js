@@ -465,6 +465,15 @@ async function init() {
     b.addEventListener('click', () => saveProfile([...PRESETS[b.dataset.preset]])));
   drawProfile();
 
+  // 아직 한 번도 안 만진 사람에게는 열어둔 채로 시작한다.
+  // 닫혀 있으면 있는 줄을 모른다 — 2026-08-09에 오빠가 서랍을 못 찾았다.
+  try {
+    if (localStorage.getItem(PROFILE_KEY) === null) {
+      $('#glovebox').hidden = false;
+      $('#gloveBtn').setAttribute('aria-expanded', 'true');
+    }
+  } catch {}
+
   setSky();
   logUse('open');
   showInstall();   // beforeinstallprompt 가 안 오는 브라우저(사파리)에서도 안내는 떠야 한다
