@@ -241,10 +241,9 @@ function drawSaved() {
   fill($('#wantList'), want, '아직 없어. 결과 카드에서 <b>붙이기</b>를 누르면 여기 붙어.');
   fill($('#beenList'), been, '아직 없어. 붙여둔 곳에서 <b>다녀왔어</b>를 누르면 여기로 와.');
 
-  // 포스트잇은 붙인 게 있을 때만 노트에 나타난다
-  const pb = $('#pinsBtn'), sc = $('.scene');
-  if (pb) { pb.hidden = want.length === 0; $('#pinsN').textContent = want.length; }
-  sc?.classList.toggle('has-pins', want.length > 0);
+  // 메모지·컵은 늘 씬에 있고, 배지만 개수를 말한다
+  const pn = $('#pinsN');
+  if (pn) { pn.textContent = want.length || ''; pn.classList.toggle('on', want.length > 0); }
   const cn = $('#cupN');
   if (cn) { cn.textContent = been.length || ''; cn.classList.toggle('on', been.length > 0); }
 
@@ -254,6 +253,27 @@ function drawSaved() {
     b.setAttribute('aria-pressed', String(on));
     b.querySelector('span').textContent = on ? '붙여둠' : '붙이기';
   });
+}
+
+/* ── 아직 안 눌러본 사물 ──
+   사물 밑에 글자 라벨을 달았더니 배치가 지저분했다(2026-08-11 오빠 지적). 라벨을 빼는 대신
+   한 번도 안 눌러본 사물이 은은히 반짝여 눌러보게 한다. 한 번 누르면 영구히 멈춘다.
+   무한 반복이지만 2.4초 주기로 아주 옅게만 — 계속 시선을 뺏으면 도구가 시끄러워진다. */
+const SEEN_KEY = 'odiga.seen.v1';
+const OBJS = [['pins', 'new-pins'], ['cup', 'new-cup'], ['glove', 'new-glove'], ['map', 'new-map']];
+
+const loadSeen = () => {
+  try { const v = JSON.parse(localStorage.getItem(SEEN_KEY)); return Array.isArray(v) ? v : []; }
+  catch { return []; }
+};
+function markSeen(k) {
+  const s = loadSeen();
+  if (!s.includes(k)) { s.push(k); try { localStorage.setItem(SEEN_KEY, JSON.stringify(s)); } catch {} }
+  drawNew();
+}
+function drawNew() {
+  const s = loadSeen(), sc = $('.scene');
+  if (sc) OBJS.forEach(([k, cls]) => sc.classList.toggle(cls, !s.includes(k)));
 }
 
 /* ── 어디서 찾을지 ── 지도를 누르면 지역을 직접 고른다.
@@ -267,7 +287,7 @@ function savePick(r) {
 function drawPick() {
   const r = loadPick();
   const lab = $('#mapLab');
-  if (lab) lab.textContent = r || '지역';
+  if (lab) { lab.textContent = r || ''; lab.classList.toggle('on', !!r); }
   const box = $('#regionList');
   if (!box) return;
   const q = ($('#regionQ')?.value || '').trim();
@@ -576,10 +596,10 @@ async function init() {
 
   // 사물 ↔ 서랍. 한 번에 하나만 연다 — 여러 개가 열리면 어느 사물에서 나왔는지 흐려진다.
   const DRAWERS = [
-    ['#pinsBtn',  '#pinbox'],
-    ['#cupBtn',   '#beenbox'],
-    ['#mapBtn',   '#regionbox'],
-    ['#gloveBtn', '#glovebox'],
+    ['#pinsBtn',  '#pinbox',    'pins'],
+    ['#cupBtn',   '#beenbox',   'cup'],
+    ['#mapBtn',   '#regionbox', 'map'],
+    ['#gloveBtn', '#glovebox',  'glove'],
   ];
   function openDrawer(sel) {
     DRAWERS.forEach(([btn, box]) => {
@@ -589,8 +609,10 @@ async function init() {
     });
     if (sel) $(sel).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
-  DRAWERS.forEach(([btn, box]) => $(btn).addEventListener('click', () =>
-    openDrawer($(box).hidden ? box : null)));
+  DRAWERS.forEach(([btn, box, key]) => $(btn).addEventListener('click', () => {
+    markSeen(key);                                   // 눌러봤으면 그만 반짝인다
+    openDrawer($(box).hidden ? box : null);
+  }));
 
   document.querySelectorAll('#presets button').forEach((b) =>
     b.addEventListener('click', () => saveProfile([...PRESETS[b.dataset.preset]])));
@@ -599,16 +621,12 @@ async function init() {
   drawProfile();
   drawSaved();
   drawPick();
+  drawNew();
 
-  // 아직 한 번도 안 만진 사람에게는 조건 서랍을 열어둔 채로 시작하고, 그 자리를 번쩍인다.
-  // 닫혀 있으면 있는 줄을 모른다 — 2026-08-09에 오빠가 서랍을 못 찾았다.
+  // 처음 온 사람에게는 조건 서랍을 열어둔 채로 시작한다. 닫혀 있으면 있는 줄을 모른다.
+  // (반짝임만으로는 "안에 뭐가 있는지"까지는 안 보인다 — 한 번은 보여줘야 한다.)
   try {
-    if (localStorage.getItem(PROFILE_KEY) === null) {
-      openDrawer('#glovebox');
-      const sc = $('.scene');
-      sc.classList.add('hint');
-      setTimeout(() => sc.classList.remove('hint'), 3400);
-    }
+    if (localStorage.getItem(PROFILE_KEY) === null) openDrawer('#glovebox');
   } catch {}
 
   setSky();
