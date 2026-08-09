@@ -1,4 +1,4 @@
-import { findRegion } from "./regions.js";
+import { findRegion, REGIONS } from "./regions.js";
 
 // 어디가지 — 조건으로 찾는 장소
 // 위치·이동수단·반경·실시간 검색 전부 동작한다.
@@ -167,6 +167,117 @@ function drawProfile() {
   if (n) { n.textContent = on.length || ''; n.classList.toggle('on', on.length > 0); }
 }
 
+/* ── 붙여둔 곳 ── 포스트잇(가보고 싶은)과 컵(다녀온)
+   이 앱을 다시 열 이유를 만드는 유일한 기능이다. 검색은 한 번 쓰고 닫으면 끝이지만
+   붙여둔 곳은 확인하러 또 열게 된다.
+   `프로필.md` 의 "방문 이력"을 사람이 손으로 갱신하던 것도 여기서 대신한다. */
+const SAVED_KEY = 'odiga.saved.v1';
+
+const loadSaved = () => {
+  try { const v = JSON.parse(localStorage.getItem(SAVED_KEY)); return Array.isArray(v) ? v : []; }
+  catch { return []; }
+};
+function putSaved(list) {
+  try { localStorage.setItem(SAVED_KEY, JSON.stringify(list.slice(-200))); } catch {}
+  drawSaved();
+}
+const savedKeyOf = (p) => `${p.name}|${p.addr || ''}`;
+
+function pinPlace(p, state) {
+  const list = loadSaved();
+  const i = list.findIndex((x) => savedKeyOf(x) === savedKeyOf(p));
+  const row = {
+    name: p.name, kind: p.kind || '', addr: p.addr || '', tel: p.tel || null,
+    lat: p.lat, lng: p.lng, priceLow: p.priceLow ?? null, priceHigh: p.priceHigh ?? null,
+    state, at: new Date().toISOString(),
+  };
+  if (i >= 0) list[i] = { ...list[i], ...row }; else list.push(row);
+  putSaved(list);
+}
+function unpinPlace(key) { putSaved(loadSaved().filter((x) => savedKeyOf(x) !== key)); }
+
+const kakaoTo = (p) =>
+  `https://map.kakao.com/link/to/${encodeURIComponent(p.name)},${p.lat},${p.lng}`;
+
+function savedRow(p) {
+  const key = savedKeyOf(p);
+  const price = p.priceLow
+    ? (p.priceLow === p.priceHigh ? p.priceLow.toLocaleString() + '원'
+       : `${p.priceLow.toLocaleString()}~${p.priceHigh.toLocaleString()}`)
+    : '가격 미확인';
+  const back = p.state === 'want'
+    ? `<button type="button" data-act="been" data-k="${esc(key)}">
+         <svg viewBox="0 0 48 48" aria-hidden="true"><use href="#i-check"/></svg>다녀왔어</button>`
+    : `<button type="button" data-act="want" data-k="${esc(key)}">다시 가고파</button>`;
+  return `<div class="row">
+      <div class="nm">${esc(p.name)}<small>${esc(p.kind)}</small></div>
+      <div class="meta">${esc(p.addr)} · ${price}</div>
+      <div class="btns">
+        <a class="go2" href="${kakaoTo(p)}" target="_blank" rel="noopener">길찾기</a>
+        ${p.tel ? `<a href="tel:${p.tel.replace(/-/g, '')}">전화</a>` : ''}
+        ${back}
+        <button type="button" class="off" data-act="off" data-k="${esc(key)}">떼기</button>
+      </div>
+    </div>`;
+}
+
+function drawSaved() {
+  const all = loadSaved();
+  const want = all.filter((p) => p.state === 'want');
+  const been = all.filter((p) => p.state === 'been');
+
+  const fill = (el, list, none) => {
+    if (!el) return;
+    el.innerHTML = list.length
+      ? [...list].reverse().map(savedRow).join('')
+      : `<p class="empty2">${none}</p>`;
+    el.querySelectorAll('button[data-act]').forEach((b) => b.addEventListener('click', () => {
+      const k = b.dataset.k;
+      if (b.dataset.act === 'off') return unpinPlace(k);
+      const row = loadSaved().find((x) => savedKeyOf(x) === k);
+      if (row) pinPlace(row, b.dataset.act);
+    }));
+  };
+  fill($('#wantList'), want, '아직 없어. 결과 카드에서 <b>붙이기</b>를 누르면 여기 붙어.');
+  fill($('#beenList'), been, '아직 없어. 붙여둔 곳에서 <b>다녀왔어</b>를 누르면 여기로 와.');
+
+  // 포스트잇은 붙인 게 있을 때만 노트에 나타난다
+  const pb = $('#pinsBtn'), sc = $('.scene');
+  if (pb) { pb.hidden = want.length === 0; $('#pinsN').textContent = want.length; }
+  sc?.classList.toggle('has-pins', want.length > 0);
+  const cn = $('#cupN');
+  if (cn) { cn.textContent = been.length || ''; cn.classList.toggle('on', been.length > 0); }
+
+  // 결과 카드의 붙이기 버튼 상태를 맞춘다
+  document.querySelectorAll('.card [data-pin]').forEach((b) => {
+    const on = all.some((x) => savedKeyOf(x) === b.dataset.pin);
+    b.setAttribute('aria-pressed', String(on));
+    b.querySelector('span').textContent = on ? '붙여둠' : '붙이기';
+  });
+}
+
+/* ── 어디서 찾을지 ── 지도를 누르면 지역을 직접 고른다.
+   지금까지는 위치나 질의에 쓴 지역으로만 정해져서 "난 용인인데 가평 갈 거야"가 안 됐다. */
+const PICK_KEY = 'odiga.region.v1';
+const loadPick = () => { try { return localStorage.getItem(PICK_KEY) || ''; } catch { return ''; } };
+function savePick(r) {
+  try { r ? localStorage.setItem(PICK_KEY, r) : localStorage.removeItem(PICK_KEY); } catch {}
+  drawPick();
+}
+function drawPick() {
+  const r = loadPick();
+  const lab = $('#mapLab');
+  if (lab) lab.textContent = r || '지역';
+  const box = $('#regionList');
+  if (!box) return;
+  const q = ($('#regionQ')?.value || '').trim();
+  const list = q ? REGIONS.filter((x) => x.includes(q)).slice(0, 40) : REGIONS.slice(0, 40);
+  box.innerHTML = (r ? `<button type="button" data-r="" aria-pressed="false">지역 지우기</button>` : '')
+    + list.map((x) => `<button type="button" data-r="${x}" aria-pressed="${x === r}">${x}</button>`).join('');
+  box.querySelectorAll('button').forEach((b) =>
+    b.addEventListener('click', () => savePick(b.dataset.r)));
+}
+
 /* ── 하늘 ──
    앞유리 너머를 지금 시각에 맞춘다. 아침엔 해가 낮게, 저녁엔 해가 내려앉고 별이 옅게,
    밤엔 달과 별. 그림은 이미 씬 안에 다 있고 여기서는 어느 것을 보여줄지만 고른다. */
@@ -274,10 +385,13 @@ function card(p, dist, best) {
   if (p.warn?.length) {
     parts.push(`<div class="warn"><b>⚠︎ 주의</b>${p.warn.map((w) => `<span>${w}</span>`).join('')}</div>`);
   }
-  const mapUrl = `https://map.kakao.com/link/to/${encodeURIComponent(p.name)},${p.lat},${p.lng}`;
+  // 붙이기 — 이 버튼이 "다시 열 이유"를 만든다
+  const pinned = loadSaved().some((x) => savedKeyOf(x) === savedKeyOf(p));
   parts.push(`<div class="acts">
       <a class="p" href="${p.tel ? 'tel:' + p.tel.replace(/-/g, '') : '#'}" ${p.tel ? '' : 'aria-disabled="true"'}>${p.tel ? '전화' : '번호 없음'}</a>
-      <a href="${mapUrl}" target="_blank" rel="noopener">길찾기</a>
+      <a href="${kakaoTo(p)}" target="_blank" rel="noopener">길찾기</a>
+      <button type="button" class="pinbtn" data-pin="${esc(savedKeyOf(p))}" aria-pressed="${pinned}">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><use href="#i-pin"/></svg><span>${pinned ? '붙여둠' : '붙이기'}</span></button>
     </div></div>`);
 
   if (p.photos?.length) {
@@ -285,6 +399,11 @@ function card(p, dist, best) {
       p.photos.map((s) => `<img src="${s}" alt="${p.name} 사진" loading="lazy">`).join('') + '</div>');
   }
   el.innerHTML = parts.join('');
+  el.querySelector('[data-pin]')?.addEventListener('click', (e) => {
+    const b = e.currentTarget;
+    if (b.getAttribute('aria-pressed') === 'true') unpinPlace(b.dataset.pin);
+    else pinPlace(p, 'want');
+  });
   return el;
 }
 
@@ -351,7 +470,8 @@ async function search() {
   if (!q) { $('#q').focus(); return; }
 
   // 지역명을 안 썼어도 위치가 있으면 서버가 좌표로 알아낸다.
-  const region = pickRegion(q);
+  // 지도에서 직접 고른 지역이 가장 세다 — "난 용인인데 가평 갈 거야"를 위해서다.
+  const region = loadPick() || pickRegion(q);
   if (!region && !state.origin) {
     n.hidden = false;
     n.innerHTML = `<b>여기가 어딘지 몰라.</b>
@@ -454,23 +574,40 @@ async function init() {
       setOrigin(+b.dataset.lat, +b.dataset.lng, b.textContent)));
   $('#radOut').textContent = `${MODES.car.label} ${state.minutes}분`;
 
-  // 글로브박스 여닫기 + 프리셋
-  $('#gloveBtn').addEventListener('click', () => {
-    const box = $('#glovebox'), open = box.hidden;
-    box.hidden = !open;
-    $('#gloveBtn').setAttribute('aria-expanded', String(open));
-    if (open) box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  });
+  // 사물 ↔ 서랍. 한 번에 하나만 연다 — 여러 개가 열리면 어느 사물에서 나왔는지 흐려진다.
+  const DRAWERS = [
+    ['#pinsBtn',  '#pinbox'],
+    ['#cupBtn',   '#beenbox'],
+    ['#mapBtn',   '#regionbox'],
+    ['#gloveBtn', '#glovebox'],
+  ];
+  function openDrawer(sel) {
+    DRAWERS.forEach(([btn, box]) => {
+      const on = box === sel;
+      $(box).hidden = !on;
+      $(btn).setAttribute('aria-expanded', String(on));
+    });
+    if (sel) $(sel).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  DRAWERS.forEach(([btn, box]) => $(btn).addEventListener('click', () =>
+    openDrawer($(box).hidden ? box : null)));
+
   document.querySelectorAll('#presets button').forEach((b) =>
     b.addEventListener('click', () => saveProfile([...PRESETS[b.dataset.preset]])));
-  drawProfile();
+  $('#regionQ').addEventListener('input', drawPick);
 
-  // 아직 한 번도 안 만진 사람에게는 열어둔 채로 시작한다.
+  drawProfile();
+  drawSaved();
+  drawPick();
+
+  // 아직 한 번도 안 만진 사람에게는 조건 서랍을 열어둔 채로 시작하고, 그 자리를 번쩍인다.
   // 닫혀 있으면 있는 줄을 모른다 — 2026-08-09에 오빠가 서랍을 못 찾았다.
   try {
     if (localStorage.getItem(PROFILE_KEY) === null) {
-      $('#glovebox').hidden = false;
-      $('#gloveBtn').setAttribute('aria-expanded', 'true');
+      openDrawer('#glovebox');
+      const sc = $('.scene');
+      sc.classList.add('hint');
+      setTimeout(() => sc.classList.remove('hint'), 3400);
     }
   } catch {}
 

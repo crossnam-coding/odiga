@@ -38,6 +38,16 @@
     <circle cx="20" cy="20" r="13"/><circle cx="20" cy="20" r="7" opacity=".35"/>
     <path d="M30 30 l12 12"/>
   </symbol>
+  <!-- 포스트잇. 모서리가 접혀 있어야 "붙이는 쪽지"로 읽힌다 -->
+  <symbol id="i-pin" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6"
+          stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 7 h24 l8 9 v25 h-32 z"/><path d="M32 7 v9 h8" opacity=".6"/>
+    <path d="M15 22 h16 M15 30 h11" opacity=".5"/>
+  </symbol>
+  <symbol id="i-check" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3"
+          stroke-linecap="round" stroke-linejoin="round">
+    <path d="M11 25 l9 9 17-20"/>
+  </symbol>
 </defs></svg>
 
 <div class="wrap">
@@ -116,11 +126,13 @@
           <!-- 글로브박스 — 늘 챙길 조건을 넣어두는 서랍. 조수석 앞이라 여기 있는 게 맞다.
                닫힌 네모로 그렸더니 오빠가 못 찾았다(2026-08-09). 사물이 메뉴를 대신하려면
                "여기 뭔가 들어 있다"가 그림만으로 보여야 한다 — 살짝 열어두고 안을 보여준다. -->
-          <path d="M330 320 h62 v32 h-62 z" opacity=".38"/>
-          <path d="M337 325 h22 v22 h-22 z" opacity=".5"/>
-          <path d="M364 325 h20 v22 h-20 z" opacity=".33"/>
-          <path d="M328 348 h66 v30 h-66 z" opacity=".8"/>
-          <path d="M347 362 h28" opacity=".6" stroke-width="3"/>
+          <g class="drawer-art">
+            <path d="M330 320 h62 v32 h-62 z" opacity=".38"/>
+            <path d="M337 325 h22 v22 h-22 z" opacity=".5"/>
+            <path d="M364 325 h20 v22 h-20 z" opacity=".33"/>
+            <path d="M328 348 h66 v30 h-66 z" opacity=".8"/>
+            <path d="M347 362 h28" opacity=".6" stroke-width="3"/>
+          </g>
 
           <!-- 접힌 지도 — 얼마나 멀리까지 -->
           <path d="M26 402 l24-7 25 7 25-7 v60 l-25 7-25-7-24 7z" opacity=".8"/>
@@ -160,6 +172,22 @@
           <span>걸어서</span></button>
       </div>
 
+      <!-- 노트에 붙인 포스트잇 = 가보고 싶은 곳. 붙인 게 있을 때만 나타난다 -->
+      <button type="button" class="hot pins" id="pinsBtn" hidden
+              aria-expanded="false" aria-controls="pinbox">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><use href="#i-pin"/></svg>
+        <b id="pinsN">0</b></button>
+
+      <!-- 컵 = 다녀온 곳. 씬에 이미 그려진 컵 위에 얹는다 -->
+      <button type="button" class="hot cup" id="cupBtn"
+              aria-expanded="false" aria-controls="beenbox" aria-label="다녀온 곳">
+        <b id="cupN"></b></button>
+
+      <!-- 지도 = 어디서 찾을지. 반경 슬라이더는 옆에 따로 있다 -->
+      <button type="button" class="hot mapbtn" id="mapBtn"
+              aria-expanded="false" aria-controls="regionbox">
+        <span id="mapLab">지역</span></button>
+
       <!-- 글로브박스 열기. 그림만으로는 못 찾아서 라벨을 붙였다(2026-08-09 오빠가 못 찾음).
            씬에서 유일하게 글자를 단 사물이지만, 못 찾는 메뉴는 없는 메뉴다. -->
       <button type="button" class="hot glove" id="gloveBtn"
@@ -171,9 +199,11 @@
         <svg viewBox="0 0 48 48" aria-hidden="true"><use href="#i-lens"/></svg><span id="goLabel">찾아줘</span></button>
     </div>
 
-    <!-- 글로브박스 속. 여기 켜둔 조건은 매번 안 써도 검색에 자동으로 붙는다.
-         서버에 저장하지 않는다 — 오빠 취향은 이 브라우저 밖으로 나가지 않는다. -->
-    <div class="glovebox" id="glovebox" hidden>
+    <!-- 사물마다 열리는 서랍. 한 번에 하나만 열린다.
+         전부 이 브라우저 안에만 저장된다 — 서버로 보내지 않는다. -->
+
+    <!-- 글로브박스 속. 여기 켜둔 조건은 매번 안 써도 검색에 자동으로 붙는다. -->
+    <div class="drawer" id="glovebox" hidden>
       <b>늘 챙길 조건</b>
       <p>여기 켜두면 매번 안 적어도 자동으로 같이 봐. 이 폰 안에만 저장돼.</p>
       <div class="presets" id="presets">
@@ -182,6 +212,27 @@
         <button type="button" data-preset="none">비우기</button>
       </div>
       <div class="chips" id="chips"></div>
+    </div>
+
+    <!-- 포스트잇 = 가보고 싶은 곳 -->
+    <div class="drawer" id="pinbox" hidden>
+      <b>가보고 싶은 곳</b>
+      <div class="saved" id="wantList"></div>
+    </div>
+
+    <!-- 컵 = 다녀온 곳 -->
+    <div class="drawer" id="beenbox" hidden>
+      <b>다녀온 곳</b>
+      <div class="saved" id="beenList"></div>
+    </div>
+
+    <!-- 지도 = 어디서 찾을지 -->
+    <div class="drawer" id="regionbox" hidden>
+      <b>어디서 찾을까</b>
+      <p>비워두면 지금 내 위치에서 찾아.</p>
+      <input type="search" id="regionQ" placeholder="지역 이름 (예: 가평, 수지, 강릉)"
+             autocomplete="off" enterkeyhint="search">
+      <div class="regions" id="regionList"></div>
     </div>
   </section>
 
