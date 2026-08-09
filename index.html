@@ -19,47 +19,24 @@
 </head>
 <body>
 
-<!-- 손그림 아이콘 모음.
-     조수석 앞 테이블 은유를 컨트롤 안까지 들고 들어간다 — 차키=차로, 운동화=걸어서,
-     접힌 지도=반경, 돋보기=찾아줘, 영수증=가격, 커피=오래 앉기.
-     stroke 가 currentColor 라 버튼이 선택되면 선 색도 같이 뒤집힌다. -->
+<!-- 사물 아이콘. 씬 위에 놓이는 "집을 수 있는 물건"들이라 버튼 안에서 크게 쓴다.
+     🚫 신발 실루엣은 두 번 실패했다(2026-08-09): 측면은 옷걸이, 위에서 본 것은 리모컨으로 읽혔다.
+        20px 안에서 신발은 형태가 안 산다. 발자국으로 확정. 다시 시도하지 말 것. -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
-  <symbol id="i-key" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6"
+  <symbol id="i-key" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
           stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="17" cy="17" r="9"/><circle cx="17" cy="17" r="2.6"/>
-    <path d="M24 24 l16 16 M35 33 l-4 4 M40 38 l-4 4"/>
+    <circle cx="16" cy="16" r="9"/><circle cx="16" cy="16" r="2.6"/>
+    <path d="M23 23 l18 18 M36 34 l-4 4 M41 39 l-4 4"/>
   </symbol>
-  <!-- 발자국 두 개, 어긋나게 = 걷는 중.
-       🚫 신발 실루엣은 두 번 실패했다(2026-08-09): 측면은 옷걸이, 위에서 본 것은 리모컨으로 읽혔다.
-          21px 에서 신발은 형태가 안 산다. 다시 시도하지 말 것. -->
-  <symbol id="i-shoe" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6"
+  <symbol id="i-foot" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
           stroke-linecap="round" stroke-linejoin="round">
-    <ellipse cx="16" cy="15" rx="6.5" ry="9"/>
-    <ellipse cx="16" cy="29" rx="4.5" ry="4.5"/>
-    <g opacity=".5">
-      <ellipse cx="33" cy="24" rx="6.5" ry="9"/>
-      <ellipse cx="33" cy="38" rx="4.5" ry="4.5"/>
-    </g>
-  </symbol>
-  <symbol id="i-map" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6"
-          stroke-linecap="round" stroke-linejoin="round">
-    <path d="M5 13 l13-4 12 4 13-4 v26 l-13 4-12-4-13 4z"/>
-    <path d="M18 9 v26 M30 13 v26"/>
+    <ellipse cx="15" cy="14" rx="6.5" ry="9"/><ellipse cx="15" cy="28" rx="4.5" ry="4.5"/>
+    <g opacity=".55"><ellipse cx="33" cy="23" rx="6.5" ry="9"/><ellipse cx="33" cy="37" rx="4.5" ry="4.5"/></g>
   </symbol>
   <symbol id="i-lens" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.8"
           stroke-linecap="round" stroke-linejoin="round">
     <circle cx="20" cy="20" r="13"/><circle cx="20" cy="20" r="7" opacity=".35"/>
     <path d="M30 30 l12 12"/>
-  </symbol>
-  <symbol id="i-receipt" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6"
-          stroke-linecap="round" stroke-linejoin="round">
-    <path d="M11 6 h26 v34 l-5-3-4 3-4-3-4 3-4-3-5 3z"/>
-    <path d="M18 16 h12 M18 24 h12 M18 31 h7"/>
-  </symbol>
-  <symbol id="i-cup" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6"
-          stroke-linecap="round" stroke-linejoin="round">
-    <path d="M11 18 h24 l-3 20 c-.4 3-17 3-17.4 0z"/><ellipse cx="23" cy="18" rx="12" ry="4"/>
-    <path d="M19 11 c-3-4 3-6 0-10 M28 11 c-3-4 3-6 0-10" opacity=".5"/>
   </symbol>
 </defs></svg>
 
@@ -70,72 +47,96 @@
     <span>광고 말고 근거로</span>
   </header>
 
+  <!-- ── 조수석 앞 테이블 ──
+       은유: 차 안에서, 내 자리에서 찾는다. 오빠 요구였던 "나 중심에서 알려주면 되잖아".
+
+       화면 전체가 씬 한 장이고, 컨트롤은 씬 위에 놓인 사물이다. 씬을 통과해서 도구로
+       가는 게 아니라 씬이 곧 도구다 — 열면 바로 노트에 적을 수 있다.
+
+       ⚠️ 좌표는 씬 SVG(viewBox 400×690)와 아래 CSS 의 % 값이 짝이다. 한쪽만 고치면 어긋난다.
+          노트를 폭 76%(x26~330)로 잡은 이유: 4:3 가로 씬에 노트를 넣었더니 375px 화면에서
+          입력칸이 105px 이 되어 글을 못 썼다(2026-08-09). 세로 씬이라야 285px 가 나온다. -->
   <section class="ask">
-    <!-- ── 앞유리 ── 지금 내가 어디에 있는지가 보이는 자리.
-         이 씬은 통과해야 하는 인트로가 아니다. 입력칸이 바로 아래 붙어 있어서
-         열자마자 쓸 수 있고, 연출 때문에 늦어지는 구간이 없다. -->
-    <div class="glass">
-      <svg class="glass-art" viewBox="0 0 400 158" fill="none" stroke="currentColor" stroke-width="1.5"
+    <div class="scene">
+      <svg class="scene-art" viewBox="0 0 400 690" fill="none" stroke="currentColor" stroke-width="1.5"
            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
         <defs>
-          <filter id="sk" x="-4%" y="-4%" width="108%" height="108%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="7" result="n"/>
-            <feDisplacementMap in="SourceGraphic" in2="n" scale="1.1" xChannelSelector="R" yChannelSelector="G"/>
+          <!-- 자로 잰 선은 손그림으로 안 읽힌다. 아주 살짝만 흔든다. -->
+          <filter id="sk" x="-3%" y="-3%" width="106%" height="106%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="11" result="n"/>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="1.3" xChannelSelector="R" yChannelSelector="G"/>
           </filter>
         </defs>
         <g filter="url(#sk)">
           <!-- 앞유리 -->
-          <path d="M8 126 C 50 16, 350 16, 392 126" opacity=".9"/>
-          <path d="M24 110 C 64 34, 336 34, 376 110" opacity=".2"/>
-          <!-- 멀리 능선 — 어디론가 가는 중이라는 신호 -->
-          <path d="M40 96 l32-15 26 11 34-17 30 14 26-11 30 15 28-10 26 13" opacity=".32"/>
-          <!-- 길이 앞유리 아래로 흘러 들어온다 -->
-          <path d="M168 126 l20-38 M232 126 l-20-38" opacity=".32"/>
-          <path d="M200 92 v-9 M200 74 v-7 M200 60 v-5" opacity=".26"/>
-          <!-- 대시보드 상판 — 위치 표시가 이 위에 앉는다 -->
-          <path d="M0 158 L0 136 C 100 123, 300 123, 400 136 L400 158" opacity=".8"/>
-          <path d="M0 146 C 100 134, 300 134, 400 146" opacity=".22"/>
+          <path d="M14 148 C 56 26, 344 26, 386 148" opacity=".9"/>
+          <path d="M32 132 C 70 46, 330 46, 368 132" opacity=".2"/>
+          <path d="M48 112 l32-16 26 11 34-18 30 15 26-11 30 15 28-10 26 13" opacity=".3"/>
+          <path d="M170 148 l22-42 M230 148 l-22-42" opacity=".3"/>
+          <path d="M200 110 v-10 M200 90 v-8 M200 74 v-6" opacity=".24"/>
+
+          <!-- 대시보드 상판 — 여기부터가 테이블이다 -->
+          <path d="M0 690 L0 172 C 100 152, 300 152, 400 172 L400 690" opacity=".85"/>
+          <path d="M0 186 C 100 166, 300 166, 400 186" opacity=".22"/>
+
+          <!-- 스프링 메모 노트 — 조건을 적는 자리. 씬에서 제일 크다 -->
+          <path d="M26 192 h304 v186 h-304 z" opacity=".9"/>
+          <path d="M26 210 h304" opacity=".3"/>
+          <path d="M52 192 v-9 M92 192 v-9 M132 192 v-9 M172 192 v-9
+                   M212 192 v-9 M252 192 v-9 M292 192 v-9" opacity=".5"/>
+
+          <!-- 영수증 — 가격을 먼저 알려준다는 약속 -->
+          <path d="M342 196 h38 v58 l-6-4-6 4-7-4-6 4-7-4-6 4z" opacity=".55"/>
+          <path d="M350 212 h22 M350 224 h22 M350 235 h13" opacity=".33"/>
+
+          <!-- 커피 — 오래 앉아있기. 위에서 내려다본 컵이라 김은 그리지 않는다(위에서는 안 보인다).
+               손잡이가 있어야 컵으로 읽힌다. -->
+          <circle cx="356" cy="304" r="18" opacity=".55"/>
+          <circle cx="356" cy="304" r="12" opacity=".3"/>
+          <path d="M374 297 c8 0 11 3 11 7 s-3 7-11 7" opacity=".45"/>
+
+          <!-- 접힌 지도 — 얼마나 멀리까지 -->
+          <path d="M26 402 l24-7 25 7 25-7 v60 l-25 7-25-7-24 7z" opacity=".8"/>
+          <path d="M50 395 v60 M75 402 v60" opacity=".35"/>
+          <circle cx="63" cy="428" r="4" opacity=".7"/>
+          <circle cx="63" cy="428" r="11" opacity=".28"/>
+          <circle cx="63" cy="428" r="18" opacity=".15"/>
         </g>
       </svg>
-      <div class="loc">
+
+      <!-- 앞유리 너머 = 지금 내가 어디 있는지 -->
+      <div class="hot loc" id="locBox">
         <span id="locText">위치 잡는 중…</span>
         <button type="button" id="locBtn">다시 잡기</button>
       </div>
-    </div>
 
-    <!-- ── 메모 노트 ── 조건을 적는 자리 -->
-    <div class="pad">
-      <span class="pad-spring" aria-hidden="true"></span>
+      <!-- 노트에 바로 적는다 -->
       <label for="q" class="sr-only">조건</label>
-      <textarea id="q" placeholder="어머니 모시고 2인, 1인 2만원 안쪽. 조미료 적고 집에서 해먹기 번거로운 거."></textarea>
-      <span class="pad-mark" aria-hidden="true">
-        <svg viewBox="0 0 48 48"><use href="#i-receipt"/></svg>
-        <svg viewBox="0 0 48 48"><use href="#i-cup"/></svg>
-      </span>
-    </div>
+      <!-- 클래스명 주의: .note 는 아래 "어떻게 고르는지" 안내 박스가 이미 쓰는 이름이다.
+           여기에 .note 를 붙였더니 그쪽 규칙이 괘선·padding 을 통째로 덮었다(2026-08-09). -->
+      <textarea id="q" class="hot notepad"
+        placeholder="어머니 모시고 2인, 1인 2만원 안쪽.&#10;조미료 적고 집에서 해먹기 번거로운 거."></textarea>
 
-    <div class="field">
-      <label id="modeLabel">어떻게 갈까</label>
-      <div class="seg" id="modeSeg" role="group" aria-labelledby="modeLabel">
-        <button type="button" data-mode="walk" aria-pressed="false">
-          <svg viewBox="0 0 48 48" aria-hidden="true"><use href="#i-shoe"/></svg>걸어서</button>
-        <button type="button" data-mode="car" aria-pressed="true">
-          <svg viewBox="0 0 48 48" aria-hidden="true"><use href="#i-key"/></svg>차로</button>
-      </div>
-    </div>
-
-    <div class="field">
-      <label for="rad">얼마나 멀리까지</label>
-      <div class="range">
-        <svg class="range-ico" viewBox="0 0 48 48" aria-hidden="true"><use href="#i-map"/></svg>
-        <input type="range" id="rad" min="5" max="60" step="5" value="20">
+      <!-- 지도 위 반경. 사물이 라벨을 대신하므로 "얼마나 멀리까지" 글자는 두지 않는다 -->
+      <div class="hot radbox">
+        <input type="range" id="rad" min="5" max="60" step="5" value="20" aria-label="얼마나 멀리까지">
         <output id="radOut" for="rad">차로 20분</output>
       </div>
-    </div>
 
-    <!-- 라벨을 span 으로 분리해 둔다. 버튼 자체에 textContent 를 대입하면 아이콘이 지워진다. -->
-    <button type="button" class="go" id="goBtn">
-      <svg viewBox="0 0 48 48" aria-hidden="true"><use href="#i-lens"/></svg><span id="goLabel">찾아줘</span></button>
+      <!-- 차키 / 발자국 = 이동수단. 고른 쪽만 이름이 뜬다 -->
+      <div class="hot modes" id="modeSeg" role="group" aria-label="어떻게 갈까">
+        <button type="button" data-mode="car" aria-pressed="true">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><use href="#i-key"/></svg>
+          <span>차로</span></button>
+        <button type="button" data-mode="walk" aria-pressed="false">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><use href="#i-foot"/></svg>
+          <span>걸어서</span></button>
+      </div>
+
+      <!-- 돋보기. 라벨은 span 으로 분리한다 — 버튼에 textContent 를 대입하면 아이콘이 지워진다 -->
+      <button type="button" class="hot go" id="goBtn">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><use href="#i-lens"/></svg><span id="goLabel">찾아줘</span></button>
+    </div>
   </section>
 
   <!-- 홈화면에 깔라는 안내. 설치 여부·브라우저 종류를 app.js 가 보고 필요할 때만 연다.
