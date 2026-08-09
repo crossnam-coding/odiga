@@ -158,9 +158,10 @@ function locate() {
     (p) => setOrigin(p.coords.latitude, p.coords.longitude),
     (err) => {
       state.origin = null; state.region = null;
-      const why = { 1: '위치 권한이 꺼져 있어', 2: '위치를 못 잡았어', 3: '시간이 초과됐어' }[err.code]
+      const why = { 1: '위치가 꺼져 있어', 2: '위치를 못 잡았어', 3: '시간이 초과됐어' }[err.code]
         || '위치를 못 잡았어';
-      el.innerHTML = `${why} — 조건 앞에 지역을 써줘 (예: <b>용인</b> 한정식)`;
+      // 이 문구는 앞유리 아치 안에 들어간다. 길면 그림 밖으로 삐져나온다(2026-08-09 실측).
+      el.innerHTML = `${why} — 조건에 <b>지역</b>을 같이 써줘`;
     },
     // 캐시된 옛날 좌표를 쓰면 다른 동네에서 이전 위치가 그대로 나온다.
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -280,8 +281,10 @@ async function search() {
   }
 
   btn.disabled = true;
-  const label = btn.textContent;
-  btn.textContent = '블로그 읽는 중…';
+  // 버튼이 아니라 라벨 span 에만 쓴다. 버튼에 textContent 를 대입하면 안의 돋보기 아이콘이 지워진다.
+  const lab = $('#goLabel');
+  const label = lab.textContent;
+  lab.textContent = '블로그 읽는 중…';
   n.hidden = false;
   n.innerHTML = `<b>${region ? esc(region) + ' 근처에서' : '지금 있는 곳 근처에서'} 찾는 중</b>
     <span>후보를 잡고 블로그 본문을 열어 조건별 근거를 뽑고 있어. 10초쯤 걸려.</span>`;
@@ -326,7 +329,7 @@ async function search() {
     n.innerHTML = `<b>검색이 실패했어.</b><span>${esc(e.message)} — 잠시 뒤 다시 눌러줘.</span>`;
   } finally {
     btn.disabled = false;
-    btn.textContent = label;
+    lab.textContent = label;
   }
 }
 

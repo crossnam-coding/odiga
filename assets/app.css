@@ -26,31 +26,73 @@ body{margin:0;background:var(--ground);color:var(--ink);line-height:1.55;
 .brand h1{font-size:19px;font-weight:800;letter-spacing:-.03em;margin:0}
 .brand span{font-size:11.5px;color:var(--muted)}
 
-/* ── 조건 입력 ── */
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ── 조건 입력 = 조수석 앞 테이블 ──
+   은유: 차 안에서, 내 자리에서 찾는다. 오빠 요구 "나 중심에서 알려주면 되잖아".
+   씬은 통과해야 하는 인트로가 아니라 입력칸을 감싸는 틀이다 — 열면 바로 쓸 수 있어야 한다. */
 .ask{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;
-  display:flex;flex-direction:column;gap:11px}
-.ask textarea{width:100%;min-height:74px;resize:vertical;border:1px solid var(--line);
-  border-radius:11px;padding:11px 12px;font:inherit;font-size:15px;background:var(--ground);
-  color:var(--ink);line-height:1.5}
-.ask textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+  display:flex;flex-direction:column;gap:11px;overflow:hidden}
+
+/* 앞유리 — 카드 폭 끝까지 흘려보낸다 */
+.glass{position:relative;margin:-14px -14px 2px;color:var(--accent)}
+.glass-art{display:block;width:100%;height:auto;opacity:.6}
+@media (prefers-color-scheme:dark){.glass-art{opacity:.5}}
+:root[data-theme=dark] .glass-art{opacity:.5}
+/* 위치 표시는 앞유리 안에 뜬다 — 박스를 씌우면 그림이 다 가려진다(2026-08-09 실측).
+   지금 어디에 있는지가 곧 "앞유리 너머 풍경" 이라는 뜻이기도 하다. */
+/* 아치는 아래로 갈수록 넓다. 위쪽에 두면 긴 문구(위치 거부 안내)가 유리 밖으로 삐져나온다. */
+.glass .loc{position:absolute;left:7%;right:7%;bottom:19%;
+  margin:0;background:none;border:none;padding:0;text-align:center;
+  flex-direction:column;gap:1px;justify-content:center;line-height:1.45;font-size:12px}
+.glass .loc button{margin:0}
+
+.ask textarea{width:100%;min-height:78px;resize:vertical;border:none;background:transparent;
+  padding:0 2px;font:inherit;font-size:15px;color:var(--ink);line-height:26px}
+.ask textarea:focus{outline:none}
 .ask textarea::placeholder{color:var(--muted)}
 
+/* 메모 노트 — 괘선 위에 적는 느낌. 선 간격과 line-height 가 같아야 글자가 줄에 앉는다 */
+.pad{position:relative;border:1px solid var(--line);border-radius:11px;padding:14px 12px 12px;
+  background:
+    repeating-linear-gradient(to bottom,transparent 0 25px,
+      color-mix(in srgb,var(--line) 40%,transparent) 25px 26px),
+    var(--ground);
+  /* 괘선 간격(26px)과 textarea 의 line-height 가 같아야 글자가 줄 위에 앉는다.
+     오프셋은 padding-top(14px)에 글자 baseline 을 맞춘 값이다. */
+  background-position:0 19px;transition:border-color .12s,box-shadow .12s}
+.pad:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 22%,transparent)}
+/* 스프링 제본 */
+.pad-spring{position:absolute;top:5px;left:14px;right:14px;height:5px;
+  background:repeating-linear-gradient(to right,var(--muted) 0 2px,transparent 2px 20px);
+  opacity:.5;border-radius:2px}
+/* 영수증·커피 — 가격을 먼저 알려준다는 약속, 오래 앉아있기 */
+.pad-mark{position:absolute;right:9px;bottom:7px;display:flex;gap:5px;color:var(--muted);opacity:.3;
+  pointer-events:none}
+.pad-mark svg{width:17px;height:17px}
+
 .seg{display:flex;gap:5px}
-.seg button{flex:1;min-height:40px;border:1px solid var(--line);background:var(--ground);
+.seg button{flex:1;min-height:44px;border:1px solid var(--line);background:var(--ground);
   color:var(--ink);border-radius:10px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:7px;
   transition:background .12s,color .12s,border-color .12s}
+.seg button svg{width:21px;height:21px;flex:none}
 .seg button[aria-pressed=true]{background:var(--accent);color:var(--ground);border-color:transparent}
 .seg button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 .field{display:flex;flex-direction:column;gap:6px}
 .field > label{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--muted)}
-.range{display:flex;align-items:center;gap:11px}
+.range{display:flex;align-items:center;gap:9px}
+.range-ico{width:22px;height:22px;flex:none;color:var(--muted)}
 .range input[type=range]{flex:1;accent-color:var(--accent);min-height:28px}
 .range output{font-size:14px;font-weight:700;min-width:62px;text-align:right;white-space:nowrap}
 
+/* 돋보기 = 찾아줘. 아이콘만 두면 탭 영역이 작아지므로 버튼 전체를 유지하고 안에 넣는다 */
 .go{min-height:52px;border:none;border-radius:13px;background:var(--accent);color:var(--ground);
   font:inherit;font-size:16.5px;font-weight:800;cursor:pointer;letter-spacing:-.01em;
+  display:flex;align-items:center;justify-content:center;gap:9px;
   transition:transform .12s ease,opacity .12s}
+.go svg{width:23px;height:23px;flex:none}
 .go:active{transform:scale(.98)}
 .go:disabled{opacity:.5;cursor:default}
 .go:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
