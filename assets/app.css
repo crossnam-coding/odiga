@@ -298,6 +298,16 @@ body{margin:0;background:var(--dash);color:var(--ink);line-height:1.55;
   display:flex;flex-direction:column;gap:4px}
 .warn b{color:var(--caution);font-size:10.5px;letter-spacing:.06em;font-weight:700}
 
+/* 못 찾은 조건 — 경고와 같은 상자에 있으면 그 가게가 문제 있는 집처럼 읽힌다(2026-08-10 오빠 결정).
+   경고색을 빼고 점선으로 "비어 있는 칸"처럼 보이게 한다. */
+.unk{border:1px dashed var(--line);border-radius:10px;padding:9px 11px;
+  display:flex;flex-direction:column;gap:5px;color:var(--muted)}
+.unk b{color:var(--muted);font-size:10.5px;letter-spacing:.06em;font-weight:700}
+.unk .ks{display:flex;flex-wrap:wrap;gap:5px}
+.unk .ks i{font-style:normal;font-size:12px;font-weight:600;color:var(--ink);
+  background:var(--ground);border:1px solid var(--line);border-radius:7px;padding:2px 8px}
+.unk span:last-child{font-size:11.5px;line-height:1.45}
+
 .acts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
 .acts a,.acts button{display:flex;align-items:center;justify-content:center;gap:4px;min-height:44px;
   border-radius:11px;text-decoration:none;font:inherit;font-weight:700;font-size:14px;

@@ -459,6 +459,12 @@ function card(p, dist, best) {
   if (p.warn?.length) {
     parts.push(`<div class="warn"><b>⚠︎ 주의</b>${p.warn.map((w) => `<span>${w}</span>`).join('')}</div>`);
   }
+  // 못 찾은 조건. 경고 색을 쓰지 않는다 — 나쁜 집이라는 뜻이 아니라 블로그에 안 적혀 있었다는 뜻이다.
+  if (p.missing?.length) {
+    parts.push(`<div class="unk"><b>못 찾은 조건</b>
+      <span class="ks">${p.missing.map((k) => `<i>${esc(k)}</i>`).join('')}</span>
+      <span>블로그 본문에 근거가 될 문장이 없었어. 지어내지 않고 비워둬.</span></div>`);
+  }
   // 붙이기 — 이 버튼이 "다시 열 이유"를 만든다
   const pinned = loadSaved().some((x) => savedKeyOf(x) === savedKeyOf(p));
   parts.push(`<div class="acts">
@@ -604,11 +610,11 @@ async function search() {
       priceNote: x.priceLow ? null : '가격 미확인',
       evidence: x.evidence.map((e) => ({ k: e.k, q: e.q, url: e.url, date: e.date, ad: e.ad })),
       good: (x.good || []).map((e) => ({ k: e.k, q: e.q, url: e.url, date: e.date, ad: e.ad })),
-      warn: [
-        ...x.warn.map((w) => `${w.q} (${w.date})`),
-        ...(x.missing.length ? [`미확인: ${x.missing.join(', ')}`] : []),
-      ],
-      photos: [],
+      // 미확인은 경고가 아니다 — "정보가 없다"인데 경고와 같은 상자에 있으면
+      // 그 가게가 문제 있는 집처럼 읽힌다(2026-08-10 오빠 결정으로 분리).
+      warn: x.warn.map((w) => `${w.q} (${w.date})`),
+      missing: x.missing || [],
+      photos: x.photos || [],
     }));
 
     // 글로브박스에서 붙은 조건은 따로 밝힌다. 안 밝히면 결과가 왜 이런지 알 수 없다.

@@ -134,6 +134,33 @@ async function naver(env, kind, params) {
   return r.json();
 }
 
+/* 가게 사진 (2026-08-10 실측으로 이 경로만 남았다).
+   · 블로그 본문 사진(postfiles.pstatic.net)은 못 쓴다. referer 없이는 200 이지만
+     우리 도메인을 referer 로 붙이면 403 이다 = 네이버가 핫링크를 막아뒀다.
+   · 이미지 검색 API 가 주는 지역DB 사진(ldb-phinf.pstatic.net)은 referer 를 붙여도 200 이다.
+     API 가 정식으로 주는 주소라 우회가 아니다. 키는 블로그·지역 검색과 같은 것을 쓴다.
+   정확도: "우대포 분당직영점" 으로 찾으면 "우대포 위례본점" 이 1위로 섞여 온다.
+   제목에 가게명이 그대로 든 것만 채택하고, 없으면 사진을 안 붙인다 — 틀린 가게 사진보다 없는 게 낫다.
+   무게: 원본(link)은 989KB 짜리도 온다 — 5곳×여러 장이면 폰에서 못 쓴다. ldb 원본은 리사이즈
+   파라미터를 안 받는다(?type=w560 → 404). 대신 API 가 같이 주는 thumbnail(search.pstatic.net)은
+   type 으로 크기가 바뀐다: b150=13KB · b300=47KB · b400=78KB(실측). 카드 폭이 화면의 62% 라
+   b400 을 쓴다 — 원본의 1/12 이고 레티나에서도 안 뭉갠다. */
+async function photosFor(env, name) {
+  try {
+    const d = await naver(env, 'image', { query: name, display: 10 });
+    const out = [];
+    for (const i of d.items || []) {
+      if (!i.link || !i.link.includes('ldb-phinf.pstatic.net')) continue;
+      if (!strip(i.title).includes(name)) continue;
+      const t = (i.thumbnail || '').replace(/([?&])type=b\d+/, '$1type=b400');
+      if (!t || out.includes(t)) continue;             // 같은 사진이 두 번 오기도 한다
+      out.push(t);
+      if (out.length === 3) break;
+    }
+    return out;
+  } catch { return []; }                               // 사진은 덤이다. 실패해도 검색은 살린다
+}
+
 // 블로그 본문. blog.naver.com/<id>/<logNo> 는 200이어도 프레임셋 껍데기(20자)라
 // PostView.naver 를 써야 전문이 온다. 데스크탑 UA가 아니면 JS 리다이렉트 스텁만 온다.
 async function postBody(link) {
@@ -358,6 +385,9 @@ export async function onRequestGet({ request, env }) {
 
     // 네이버가 준 순서가 아니라, 근거가 몇 개 잡혔는지로 다시 세운다.
     places.sort((a, b) => b.rank - a.rank);
+
+    // 사진은 순서가 정해진 뒤에 붙인다. 다섯 곳을 한꺼번에 물어보고, 늦어도 검색을 막지 않는다.
+    await Promise.all(places.map(async (p) => { p.photos = await photosFor(env, p.name); }));
 
     return json({
       query: q,
