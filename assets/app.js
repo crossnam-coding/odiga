@@ -537,19 +537,36 @@ function josa(word, withJong, without) {
   return (c >= 0 && c <= 11171 && c % 28 !== 0) ? withJong : without;
 }
 
+// 안내는 씬보다 한참 아래에 있어서 띄우기만 하면 화면 밖에 뜬다
+// (2026-08-10 실측: 375×812 에서 안내 top 이 1199 — 버튼 아래 500px). 눌러도 아무 일이 없어 보이는 원인이라
+// 띄울 때는 반드시 눈앞으로 데려온다. 성공했을 때만 #results 로 따로 스크롤한다.
+function showNotice(html) {
+  const n = $('#notice');
+  n.hidden = false;
+  n.innerHTML = html;
+  n.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 async function search() {
   const q = $('#q').value.trim();
   const n = $('#notice');
   const btn = $('#goBtn');
-  if (!q) { $('#q').focus(); return; }
+  // 빈 채로 눌렀을 때 조용히 끝내면 "눌러도 아무 일이 없다"가 된다(2026-08-10 오빠 신고).
+  // 노트에 흐리게 보이는 예시가 이미 적힌 글처럼 읽혀서, 그대로 돋보기를 누르게 된다.
+  if (!q) {
+    showNotice(`<b>노트가 비어 있어.</b>
+      <span>노트에 흐리게 보이는 건 <b>예시</b>야 — 조건을 직접 적어줘.
+      위치를 안 켰으면 <b>지역을 앞에 붙이면</b> 바로 찾아. 예: <b>분당</b> 조용한 한식.</span>`);
+    $('#q').focus();
+    return;
+  }
 
   // 지역명을 안 썼어도 위치가 있으면 서버가 좌표로 알아낸다.
   // 지도에서 직접 고른 지역이 가장 세다 — "난 용인인데 가평 갈 거야"를 위해서다.
   const region = loadPick() || pickRegion(q);
   if (!region && !state.origin) {
-    n.hidden = false;
-    n.innerHTML = `<b>여기가 어딘지 몰라.</b>
-      <span>위 <b>다시 잡기</b>로 위치를 허용하거나, 조건 앞에 지역을 써줘 — 예: <b>용인</b> 한정식.</span>`;
+    showNotice(`<b>여기가 어딘지 몰라.</b>
+      <span>위 <b>다시 잡기</b>로 위치를 허용하거나, 조건 앞에 지역을 써줘 — 예: <b>용인</b> 한정식.</span>`);
     return;
   }
 
@@ -560,9 +577,8 @@ async function search() {
   lab.textContent = '블로그 읽는 중…';
   setSky();                                    // 자정을 넘겨 열어둔 경우를 위해 여기서도 맞춘다
   $('.scene')?.classList.add('searching');     // 앞유리 중앙선이 흐른다
-  n.hidden = false;
-  n.innerHTML = `<b>${region ? esc(region) + ' 근처에서' : '지금 있는 곳 근처에서'} 찾는 중</b>
-    <span>후보를 잡고 블로그 본문을 열어 조건별 근거를 뽑고 있어. 10초쯤 걸려.</span>`;
+  showNotice(`<b>${region ? esc(region) + ' 근처에서' : '지금 있는 곳 근처에서'} 찾는 중</b>
+    <span>후보를 잡고 블로그 본문을 열어 조건별 근거를 뽑고 있어. 10초쯤 걸려.</span>`);
 
   try {
     const p = new URLSearchParams({ q });
