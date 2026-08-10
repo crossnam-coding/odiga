@@ -436,7 +436,7 @@ function card(p, dist, best) {
   // 붙이기 — 이 버튼이 "다시 열 이유"를 만든다
   const pinned = loadSaved().some((x) => savedKeyOf(x) === savedKeyOf(p));
   parts.push(`<div class="acts">
-      <a class="p" href="${p.tel ? 'tel:' + p.tel.replace(/-/g, '') : '#'}" ${p.tel ? '' : 'aria-disabled="true"'}>${p.tel ? '전화' : '번호 없음'}</a>
+      <a class="${p.tel ? 'p' : 'off'}" href="${p.tel ? 'tel:' + p.tel.replace(/-/g, '') : '#'}" ${p.tel ? '' : 'aria-disabled="true"'}>${p.tel ? '전화' : '번호 없음'}</a>
       <a href="${kakaoTo(p)}" target="_blank" rel="noopener">길찾기</a>
       <button type="button" class="pinbtn" data-pin="${esc(savedKeyOf(p))}" aria-pressed="${pinned}">
         <svg viewBox="0 0 48 48" aria-hidden="true"><use href="#i-pin"/></svg><span>${pinned ? '붙여둠' : '붙이기'}</span></button>
