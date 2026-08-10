@@ -279,21 +279,49 @@ function drawNew() {
 /* ── 어디서 찾을지 ── 지도를 누르면 지역을 직접 고른다.
    지금까지는 위치나 질의에 쓴 지역으로만 정해져서 "난 용인인데 가평 갈 거야"가 안 됐다. */
 const PICK_KEY = 'odiga.region.v1';
+const RECENT_KEY = 'odiga.recentRegion.v1';
+
 const loadPick = () => { try { return localStorage.getItem(PICK_KEY) || ''; } catch { return ''; } };
+const loadRecent = () => {
+  try { const v = JSON.parse(localStorage.getItem(RECENT_KEY)); return Array.isArray(v) ? v : []; }
+  catch { return []; }
+};
 function savePick(r) {
-  try { r ? localStorage.setItem(PICK_KEY, r) : localStorage.removeItem(PICK_KEY); } catch {}
+  try {
+    if (r) {
+      localStorage.setItem(PICK_KEY, r);
+      localStorage.setItem(RECENT_KEY, JSON.stringify([r, ...loadRecent().filter((x) => x !== r)].slice(0, 5)));
+    } else localStorage.removeItem(PICK_KEY);
+  } catch {}
   drawPick();
 }
+
+/* 200개를 통째로 뿌렸더니 "너무 많이 나온다"(2026-08-11 오빠).
+   평소엔 지금 있는 곳과 최근 고른 것만 보여주고, 나머지는 쳐서 찾는다. */
 function drawPick() {
   const r = loadPick();
   const lab = $('#mapLab');
   if (lab) { lab.textContent = r || ''; lab.classList.toggle('on', !!r); }
   const box = $('#regionList');
   if (!box) return;
+
   const q = ($('#regionQ')?.value || '').trim();
-  const list = q ? REGIONS.filter((x) => x.includes(q)).slice(0, 40) : REGIONS.slice(0, 40);
-  box.innerHTML = (r ? `<button type="button" data-r="" aria-pressed="false">지역 지우기</button>` : '')
-    + list.map((x) => `<button type="button" data-r="${x}" aria-pressed="${x === r}">${x}</button>`).join('');
+  let list, note = '';
+  if (q) {
+    // 앞에서부터 일치하는 걸 먼저 — "가"를 치면 "가평"이 "충남 서산"보다 위여야 한다
+    const hit = REGIONS.filter((x) => x.includes(q));
+    hit.sort((a, b) => (a.startsWith(q) ? 0 : 1) - (b.startsWith(q) ? 0 : 1) || a.length - b.length);
+    list = hit.slice(0, 12);
+    if (!list.length) note = `"${q}" 는 못 찾았어. 더 넓게 (읍·면 대신 시·군) 쳐봐.`;
+  } else {
+    list = [...new Set([state.region, ...loadRecent()].filter(Boolean))].slice(0, 6);
+    if (!list.length) note = '지역 이름을 쳐봐. 비워두면 지금 있는 곳에서 찾아.';
+  }
+
+  box.innerHTML =
+    (r ? `<button type="button" data-r="" class="clr">${esc(r)} 지우기</button>` : '')
+    + list.map((x) => `<button type="button" data-r="${x}" aria-pressed="${x === r}">${x}</button>`).join('')
+    + (note ? `<p class="hintline">${esc(note)}</p>` : '');
   box.querySelectorAll('button').forEach((b) =>
     b.addEventListener('click', () => savePick(b.dataset.r)));
 }

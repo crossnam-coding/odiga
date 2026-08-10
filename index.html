@@ -124,8 +124,8 @@
             <path d="M340 216 h26 M340 228 h20" opacity=".38"/>
           </g>
 
-          <!-- 커피 = 다녀온 곳. 위에서 내려다본 컵이라 김은 그리지 않는다(위에서는 안 보인다).
-               손잡이가 있어야 컵으로 읽힌다. -->
+          <!-- 커피 = 다녀온 곳. 위에서 내려다봤으니 김도 위에서 본 모습 —
+               동그랗게 퍼지며 옅어진다. -->
           <g class="cup-art">
             <circle cx="356" cy="294" r="17" opacity=".55"/>
             <circle cx="356" cy="294" r="11" opacity=".3"/>
@@ -148,9 +148,19 @@
             <path d="M26 402 l24-7 25 7 25-7 v60 l-25 7-25-7-24 7z" opacity=".8"/>
             <path d="M50 395 v60 M75 402 v60" opacity=".35"/>
             <circle cx="63" cy="428" r="4" opacity=".7"/>
-            <circle cx="63" cy="428" r="11" opacity=".28"/>
-            <circle cx="63" cy="428" r="18" opacity=".15"/>
           </g>
+        </g>
+
+        <!-- 김과 음파는 손그림 필터 밖에 둔다.
+             ①흔들림이 필요 없는 그림이고 ②필터 안에서 매 프레임 움직이면
+             재계산이 걸릴 수 있다. 밖에 두면 그 걱정이 사라진다. -->
+        <g class="steam" aria-hidden="true">
+          <circle cx="356" cy="294" r="13"/>
+          <circle cx="356" cy="294" r="13"/>
+        </g>
+        <g class="sonar" aria-hidden="true">
+          <circle cx="63" cy="428" r="9"/>
+          <circle cx="63" cy="428" r="9"/>
         </g>
       </svg>
 
