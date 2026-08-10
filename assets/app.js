@@ -627,7 +627,13 @@ async function search() {
     const auto = fp.length
       ? `이 중 <b>${esc(fp.join(' · '))}</b>${josa(fp[fp.length - 1], '은', '는')} `
         + `글로브박스에서 자동으로 붙었어. ` : '';
+    // 음식 종류를 못 알아들어 추측한 경우엔 숨기지 않고 먼저 밝힌다.
+    // 2026-08-10 사고: "먹으러"·"거야" 로 찾아놓고 아무 말 없이 결과처럼 보여줬다.
+    const guess = d.guessed
+      ? `<b style="color:var(--caution)">"${esc((d.kinds || []).join(' · '))}"로 찾았어 — 음식 종류를 못 알아들었어.</b>
+         <span>한식·고기·칼국수처럼 <b>종류를 한 단어</b>로 넣으면 정확해져. </span>` : '';
     n.innerHTML = `<b>${esc(d.region)} · ${d.places.length}곳</b>
+      ${guess}
       <span>조건 <b>${d.asked.join(' · ') || '없음'}</b> 기준. ${auto}
       ${d.regionFrom === '현재 위치' ? '지역은 <b>현재 위치</b>에서 잡았어. ' : ''}
       인용은 실제 블로그 본문에서 뽑았고 날짜·링크가 붙어 있어.</span>`;

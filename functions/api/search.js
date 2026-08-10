@@ -41,6 +41,12 @@ const ASPECTS = [
     hit: /부모님|어르신|어머니|아버지|엄마|아빠|모시(고|기)|연세|고령/ },
   { key: '뷰',     ask: /뷰|전망|경치|강|바다|창/,
     hit: /통창|뷰\s*맛집|전망|강이?\s*보이|풍경/ },
+  // 2026-08-10 실측 사고: "엄마는 이빨이 안 좋아서 부드러운 한식" 으로 물었는데
+  // 이 조건이 사전에 없어서 통째로 무시되고, 대신 글로브박스의 작업·에어컨·체류가 붙었다.
+  // 엄마랑 밥 먹으러 가는데 노트북 콘센트를 찾고 있었다. 어르신과 같이 가는 자리에서
+  // 제일 자주 나오는 조건인데 빠져 있었다.
+  { key: '부드러움', ask: /부드러|연한|무른|씹기|씹|이빨|치아|틀니|잇몸|소화|죽|무르/,
+    hit: /부드럽|연하고|연해|살살\s*녹|입에서\s*녹|녹아|무르게|푹\s*(익|삶|고아)|씹기\s*(편|좋)|잘\s*넘어가|목넘김/ },
 ];
 
 /* ── 무엇을 찾는지 ──
@@ -64,21 +70,41 @@ const KINDS = [
 // "엄마랑 저녁"이 남아 키즈카페 "엄마랑아이랑", 여성의류 "엄마랑딸이랑"을 물어왔다(2026-08-09).
 const NOT_KIND = /어머니|아버지|부모님|어른|어르신|가족|엄마|아빠|엄니|모친|부친|할머니|할아버지|친구|혼자|모시고|이?랑|같이|함께|아침|점심|저녁|밤|새벽|주말|평일|오늘|내일|먹고|드시|싶|하는데|하심|좋아|주차|조미료|에어컨|콘센트|노트북|담백|자극|저렴|가성비|조용|근처|여기|괜찮|좋은|맛있|추천|곳|집인?데|요$|해줘|찾아/g;
 
+// 말끝(어미·조사)로 끝나는 말은 음식 이름이 아니다.
+// 2026-08-10 사고: "밥 먹으러 갈 거야" 에서 폴백이 "먹으러"·"거야" 를 검색어로 써서
+// 상호가 "먹으러가자"(화성)·"다 잘될거야"(수원 테이크아웃커피)인 집을 물어왔다.
+// 8/9 "엄마랑" 사고와 같은 종류다 — 금지어를 하나씩 늘리는 방식으로는 계속 샌다.
+const VERBISH = /(러|려|야|다|고|서|까|니|면|는|은|을|를|와|과|에|도|만|해|줘|봐|아|어|지|죠|네|겠|았|었|든|던)$/;
+
+/* 무엇을 찾을지 정한다. 반환: { terms, kinds, guessed }
+   guessed=true 면 사전에 없는 말을 추측해서 쓴 것이라 화면에 그 사실을 밝힌다.
+   이 앱은 근거를 못 찾으면 "못 찾았어"라고 적는다. 검색어도 같아야 한다 — 추측을 확신처럼 보여주지 않는다. */
 function searchTerms(q, region) {
-  const found = KINDS.filter((k) => q.includes(k));
+  // 사람은 "한 식", "칼 국수" 처럼 띄어 쓴다. 붙여서도 한 번 본다.
+  // (2026-08-10 실측: "부드러운 한 식으로" 가 '한식' 을 못 잡아 폴백으로 새면서 사고가 났다.)
+  const flat = q.replace(/\s+/g, '');
+  // KINDS 에 '칼국수' 처럼 두 번 적힌 항목이 있어 그대로 두면 같은 검색을 두 번 던진다(2026-08-10 실측).
+  const found = [...new Set(KINDS.filter((k) => q.includes(k) || flat.includes(k)))];
   found.sort((a, b) => b.length - a.length);   // "생선구이"가 "생선"보다 구체적이다
   let kinds = found.slice(0, 3);
+  let guessed = false;
 
   // 사전에 없는 음식을 말할 수 있다. "맛집"으로 뭉뚱그리면 엉뚱한 게 나온다.
   // (실측: "엄마랑 생선 먹고 싶다" → 사전에 생선이 없어 베이커리가 나왔다.)
-  // 조건어를 걷어내고 남은 말을 그대로 검색어로 쓴다.
+  // 조건어를 걷어내고 남은 말을 쓰되, 말끝으로 끝나는 것은 버린다.
   if (!kinds.length) {
+    // 지역명이 그대로 남으면 "용인 용인" 으로 검색된다. REGION_HINT 는 접미사만 보기 때문에
+    // "용인"·"분당" 처럼 시·구로 안 끝나는 이름은 안 걸린다(2026-08-10 실측). 지역명 자체를 뺀다.
     const rest = q.replace(NOT_KIND, ' ').replace(/[^가-힣a-zA-Z ]/g, ' ')
-      .split(/\s+/).filter((w) => w.length >= 2 && !REGION_HINT.test(w));
+      .split(/\s+/)
+      .filter((w) => w.length >= 2 && !REGION_HINT.test(w) && !VERBISH.test(w)
+        && !(region && (w === region || region.includes(w))));
     kinds = rest.slice(0, 2);
+    guessed = kinds.length > 0;
   }
-  if (!kinds.length) kinds.push('맛집');
-  return kinds.map((k) => (region ? `${region} ${k}` : k));
+  // 그래도 못 고르면 지어내지 않는다. 아무 단어나 넣느니 "맛집"으로 넓게 보고 그 사실을 밝힌다.
+  if (!kinds.length) { kinds = ['맛집']; guessed = true; }
+  return { terms: kinds.map((k) => (region ? `${region} ${k}` : k)), kinds, guessed };
 }
 // 지역명이 검색어에 두 번 들어가지 않게.
 const REGION_HINT = /(시|군|구|읍|면|동|리|역)$/;
@@ -288,7 +314,7 @@ export async function onRequestGet({ request, env }) {
     // 1) 후보 장소 — 지역 검색은 좌표를 준다.
     //    display 최대 5, start는 1뿐이라 페이징이 안 된다(2026-08-03 실측).
     //    그래서 종류별로 쿼리를 나눠 던지고 합친다.
-    const terms = searchTerms(q, region);
+    const { terms, kinds, guessed } = searchTerms(q, region);
     const locals = await Promise.all(
       terms.map((t) => naver(env, 'local', { query: t, display: 5 })
         .catch((e) => { stamp({ ev: 'local_fail', rid, term: t, err: String(e.message || e) }); return { items: [] }; }))
@@ -415,6 +441,8 @@ export async function onRequestGet({ request, env }) {
     stamp({
       ev: 'ok', rid, ms: Date.now() - t0, region, regionFrom,
       q: q.slice(0, 60), asked: asked.map((a) => a.key),
+      // 검색어를 안 남겨서 8/10 사고 때 무엇으로 찾았는지 추론해야 했다. 이제 그대로 남긴다.
+      terms, guessed,
       곳: places.length,
       근거없는곳: places.filter((p) => !p.evidence.length).length,
       사진없는곳: places.filter((p) => !p.photos.length).length,
@@ -427,6 +455,8 @@ export async function onRequestGet({ request, env }) {
       regionFrom,
       origin: Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null,
       places,
+      // 무엇으로 찾았는지 숨기지 않는다. 추측이면 추측이라고 화면에 밝힌다.
+      kinds, guessed,
       rid,
       collectedAt: new Date().toISOString(),
     });
