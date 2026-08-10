@@ -16,13 +16,22 @@ export async function onRequestGet({ request }) {
     const r = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&zoom=12&accept-language=ko&lat=${lat}&lon=${lng}`,
       { headers: { 'User-Agent': 'odiga/1.0 (https://odiga-eyf.pages.dev)' } });
-    if (!r.ok) return json({ error: `역지오코딩 ${r.status}` }, 502);
+    // 여기가 실패하면 "위치가 꺼져 있어" 로만 보여서 원인이 안 드러난다(2026-08-10 로그 신설).
+    // 좌표는 소수점 둘째 자리까지만 남긴다 — 로그로 집을 특정할 수 있으면 안 된다.
+    const at = `${lat.toFixed(2)},${lng.toFixed(2)}`;
+    if (!r.ok) {
+      console.error(JSON.stringify({ ev: 'where_http', status: r.status, at }));
+      return json({ error: `역지오코딩 ${r.status}` }, 502);
+    }
     const a = (await r.json()).address || {};
     const wide = a.city || a.county || a.province || a.state || '';
     const near = a.town || a.borough || a.city_district || a.suburb || a.quarter || '';
     const region = (wide || near).replace(/(특별시|광역시|자치시|자치도)$/, '').replace(/(시|군|구)$/, '');
+    if (!region) console.log(JSON.stringify({ ev: 'where_empty', at, keys: Object.keys(a).slice(0, 8) }));
     return json({ region: region || null, wide: wide || null, near: near || null });
   } catch (e) {
+    console.error(JSON.stringify({ ev: 'where_fail',
+      at: `${lat.toFixed(2)},${lng.toFixed(2)}`, err: String(e.message || e) }));
     return json({ error: String(e.message || e) }, 502);
   }
 }

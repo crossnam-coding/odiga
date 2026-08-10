@@ -158,7 +158,10 @@ async function photosFor(env, name) {
       if (out.length === 3) break;
     }
     return out;
-  } catch { return []; }                               // 사진은 덤이다. 실패해도 검색은 살린다
+  } catch (e) {                                        // 사진은 덤이다. 실패해도 검색은 살린다
+    stamp({ ev: 'photo_fail', name, err: String(e.message || e) });
+    return [];
+  }
 }
 
 // 블로그 본문. blog.naver.com/<id>/<logNo> 는 200이어도 프레임셋 껍데기(20자)라
@@ -173,7 +176,8 @@ async function postBody(link) {
       headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
         + 'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36' },
     });
-    if (!r.ok) return '';
+    // 본문을 못 읽으면 근거가 통째로 안 나온다. 조용히 넘기면 "왜 근거가 없지"를 알 수 없다.
+    if (!r.ok) { stamp({ ev: 'blog_http', status: r.status, blog: `${m[1]}/${m[2]}` }); return ''; }
     let t = (await r.text())
       .replace(/<script[\s\S]*?<\/script>/gi, '')
       .replace(/<style[\s\S]*?<\/style>/gi, '')
@@ -189,7 +193,10 @@ async function postBody(link) {
     const cut = t.search(/관련 ?글|함께 ?볼만한|이 ?블로그의 ?인기|추천 ?포스트|다른 ?사람들이/);
     if (cut > 400) t = t.slice(0, cut);
     return t;
-  } catch { return ''; }
+  } catch (e) {
+    stamp({ ev: 'blog_fail', blog: `${m[1]}/${m[2]}`, err: String(e.message || e) });
+    return '';
+  }
 }
 
 // 한국어 블로그는 마침표를 잘 안 쓴다. 종결어미·줄바꿈까지 문장 경계로 본다.
@@ -226,7 +233,19 @@ async function regionFromCoords(lat, lng) {
   } catch { return ''; }
 }
 
+/* 로그 (2026-08-10 오빠 지적으로 신설).
+   그때까지 이 파일의 console 출력은 0개였다. 조용히 삼키는 catch 가 다섯 군데라
+   "왜 근거가 안 나왔는지" 물어볼 데가 없었다.
+   보는 법:  npx wrangler@4 pages deployment list --project-name odiga   ← 배포 ID 확인
+             npx wrangler@4 pages deployment tail <배포ID> --project-name odiga
+   한 줄에 JSON 으로 담는다. 여러 줄로 흩으면 동시 요청이 섞여 못 읽는다.
+   실시간이라 지나간 실패는 못 본다 — 그래서 화면에도 같은 코드를 띄운다(rid + 단계). */
+const stamp = (o) => { try { console.log(JSON.stringify(o)); } catch { /* 로그가 요청을 죽이면 안 된다 */ } };
+
 export async function onRequestGet({ request, env }) {
+  const t0 = Date.now();
+  // 화면에 뜬 실패와 서버 로그를 맞춰보기 위한 짧은 표식. 오빠가 이것만 알려줘도 찾을 수 있다.
+  const rid = Math.random().toString(36).slice(2, 6);
   const u = new URL(request.url);
   const q     = (u.searchParams.get('q') || '').trim();
   const lat   = parseFloat(u.searchParams.get('lat'));
@@ -244,7 +263,9 @@ export async function onRequestGet({ request, env }) {
 
   if (!q) return json({ error: '조건을 입력해줘' }, 400);
   if (!env.NCP_APIGW_KEY_ID || !env.NCP_APIGW_KEY) {
-    return json({ error: '서버에 네이버 검색 키가 설정되지 않았어' }, 500);
+    // 이게 뜨면 앱 전체가 죽은 것이다. 조용히 넘기면 안 된다.
+    console.error(JSON.stringify({ ev: 'no_key', rid }));
+    return json({ error: `서버에 네이버 검색 키가 설정되지 않았어 · rid ${rid}`, rid }, 500);
   }
 
   // 사용자가 실제로 물어본 조건 + 글로브박스에 켜둔 조건.
@@ -269,7 +290,8 @@ export async function onRequestGet({ request, env }) {
     //    그래서 종류별로 쿼리를 나눠 던지고 합친다.
     const terms = searchTerms(q, region);
     const locals = await Promise.all(
-      terms.map((t) => naver(env, 'local', { query: t, display: 5 }).catch(() => ({ items: [] })))
+      terms.map((t) => naver(env, 'local', { query: t, display: 5 })
+        .catch((e) => { stamp({ ev: 'local_fail', rid, term: t, err: String(e.message || e) }); return { items: [] }; }))
     );
     const seen = new Set();
     const cands = locals.flatMap((l) => l.items || [])
@@ -389,6 +411,14 @@ export async function onRequestGet({ request, env }) {
     // 사진은 순서가 정해진 뒤에 붙인다. 다섯 곳을 한꺼번에 물어보고, 늦어도 검색을 막지 않는다.
     await Promise.all(places.map(async (p) => { p.photos = await photosFor(env, p.name); }));
 
+    // 성공도 남긴다. 실패만 남기면 "근거가 왜 적지" 같은 물음에 답할 수 없다.
+    stamp({
+      ev: 'ok', rid, ms: Date.now() - t0, region, regionFrom,
+      q: q.slice(0, 60), asked: asked.map((a) => a.key),
+      곳: places.length,
+      근거없는곳: places.filter((p) => !p.evidence.length).length,
+      사진없는곳: places.filter((p) => !p.photos.length).length,
+    });
     return json({
       query: q,
       asked: asked.map(a => a.key),
@@ -397,9 +427,13 @@ export async function onRequestGet({ request, env }) {
       regionFrom,
       origin: Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null,
       places,
+      rid,
       collectedAt: new Date().toISOString(),
     });
   } catch (e) {
-    return json({ error: String(e.message || e) }, 502);
+    // 화면에도 같은 rid 를 띄운다. 오빠가 "실패했어, rid a3f2" 한 마디면 로그에서 찾을 수 있다.
+    console.error(JSON.stringify({ ev: 'fail', rid, ms: Date.now() - t0,
+      q: q.slice(0, 60), region, err: String(e.message || e), stack: String(e.stack || '').slice(0, 300) }));
+    return json({ error: `${String(e.message || e)} · rid ${rid}`, rid }, 502);
   }
 }
