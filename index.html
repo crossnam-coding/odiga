@@ -68,86 +68,127 @@
           입력칸이 105px 이 되어 글을 못 썼다(2026-08-09). 세로 씬이라야 285px 가 나온다. -->
   <section class="ask">
     <div class="scene">
-      <svg class="scene-art" viewBox="0 0 400 690" fill="none" stroke="currentColor" stroke-width="1.5"
+      <svg class="scene-art" viewBox="0 0 400 690" fill="none" stroke="currentColor"
            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
         <defs>
-          <!-- 자로 잰 선은 손그림으로 안 읽힌다. 아주 살짝만 흔든다. -->
-          <filter id="sk" x="-3%" y="-3%" width="106%" height="106%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="11" result="n"/>
-            <feDisplacementMap in="SourceGraphic" in2="n" scale="1.3" xChannelSelector="R" yChannelSelector="G"/>
+          <!-- 손그림 흔들림. 1.3 은 너무 얌전해서 자로 잰 도형처럼 보였다 —
+               굴곡을 키우고(baseFrequency↓) 진폭을 올려(scale↑) 사람 손 느낌을 낸다. -->
+          <filter id="sk" x="-4%" y="-4%" width="108%" height="108%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="3" seed="11" result="n"/>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G"/>
           </filter>
+          <!-- 앞유리 안쪽. 하늘·산·길이 유리 밖으로 삐져나가지 않게 오려낸다 -->
+          <clipPath id="glass">
+            <path d="M14 150 C 56 26, 344 26, 386 150 Z"/>
+          </clipPath>
         </defs>
+
         <g filter="url(#sk)">
-          <!-- 앞유리 -->
-          <path d="M14 148 C 56 26, 344 26, 386 148" opacity=".9"/>
-          <path d="M32 132 C 70 46, 330 46, 368 132" opacity=".2"/>
-          <path d="M48 112 l32-16 26 11 34-18 30 15 26-11 30 15 28-10 26 13" opacity=".3"/>
-          <path d="M170 148 l22-42 M230 148 l-22-42" opacity=".3"/>
-          <!-- 중앙선. 찾는 동안 아래로 흐른다 — 가고 있다는 느낌 -->
-          <path class="road" d="M200 116 V62" stroke-dasharray="9 11" opacity=".28"/>
+          <!-- ── 앞유리 너머 ── -->
+          <g clip-path="url(#glass)">
+            <path d="M14 150 C 56 26, 344 26, 386 150 Z" fill="var(--sky)"/>
+            <!-- 먼 산. 채워야 능선이 능선으로 보인다 -->
+            <path d="M0 118 l40-22 30 14 38-22 34 18 30-14 36 19 32-12 30 16 40-8 l28 13 22-9 L400 106 l28 13 22-9 L400 106 V152 H0 Z"
+                  fill="var(--pen)" opacity=".14"/>
+            <path d="M0 118 l40-22 30 14 38-22 34 18 30-14 36 19 32-12 30 16 40-8 l28 13 22-9 L400 106"
+                  stroke="var(--pen)" stroke-width="1.6" opacity=".42"/>
+            <!-- 길이 유리 아래로 흘러 들어온다 -->
+            <path d="M168 152 L192 104 L208 104 L232 152 Z" fill="var(--pen)" opacity=".08"/>
+            <path d="M168 152 L192 104 M232 152 L208 104" stroke="var(--pen)" stroke-width="1.6" opacity=".4"/>
+            <path class="road" d="M200 146 V96" stroke="var(--pen)" stroke-width="2.4"
+                  stroke-dasharray="10 12" opacity=".38"/>
 
-          <!-- 하늘. 지금 몇 시냐에 따라 해가 뜨고 지고 별이 뜬다.
-               app.js 가 .scene[data-time] 을 놓고 CSS 가 골라 보여준다. -->
-          <g class="sky">
-            <g class="sun">
-              <circle cx="304" cy="72" r="13" opacity=".5"/>
-              <path d="M304 51 v-7 M304 100 v7 M283 72 h-7 M325 72 h7
-                       M289 57 l-5-5 M319 87 l5 5 M319 57 l5-5 M289 87 l-5 5" opacity=".3"/>
-            </g>
-            <g class="moon">
-              <path d="M310 60 a15 15 0 1 0 12 22 12 12 0 0 1-12-22z" opacity=".5"/>
-            </g>
-            <g class="stars" opacity=".45">
-              <path d="M96 62 v6 M93 65 h6 M150 48 v5 M147.5 50.5 h5
-                       M252 54 v5 M249.5 56.5 h5 M118 86 v4 M116 88 h4"/>
+            <!-- 하늘. 지금 몇 시냐에 따라 해가 뜨고 지고 별이 뜬다.
+                 app.js 가 .scene[data-time] 을 놓고 CSS 가 골라 보여준다. -->
+            <g class="sky" stroke="var(--pen)">
+              <g class="sun">
+                <circle cx="306" cy="74" r="14" fill="var(--pen)" opacity=".1"/>
+                <circle cx="306" cy="74" r="14" stroke-width="1.8" opacity=".5"/>
+                <path d="M306 52 v-8 M306 96 v8 M284 74 h-8 M328 74 h8
+                         M291 59 l-6-6 M321 89 l6 6 M321 59 l6-6 M291 89 l-6 6"
+                      stroke-width="1.6" opacity=".32"/>
+              </g>
+              <g class="moon">
+                <path d="M312 60 a16 16 0 1 0 13 23 13 13 0 0 1-13-23z"
+                      fill="var(--pen)" opacity=".13"/>
+                <path d="M312 60 a16 16 0 1 0 13 23 13 13 0 0 1-13-23z" stroke-width="1.8" opacity=".5"/>
+              </g>
+              <g class="stars" stroke-width="1.5" opacity=".5">
+                <path d="M96 60 v7 M92.5 63.5 h7 M152 46 v6 M149 49 h6
+                         M254 52 v6 M251 55 h6 M118 88 v5 M115.5 90.5 h5"/>
+              </g>
             </g>
           </g>
+          <!-- 유리 테두리 -->
+          <path d="M14 150 C 56 26, 344 26, 386 150" stroke="var(--pen)" stroke-width="2.2" opacity=".8"/>
+          <path d="M32 136 C 70 48, 330 48, 368 136" stroke="var(--pen)" stroke-width="1.4" opacity=".18"/>
 
-          <!-- 대시보드 상판 — 여기부터가 테이블이다 -->
-          <path d="M0 690 L0 172 C 100 152, 300 152, 400 172 L400 690" opacity=".85"/>
-          <path d="M0 186 C 100 166, 300 166, 400 186" opacity=".22"/>
+          <!-- ── 대시보드 상판 ── 여기부터가 테이블이다 -->
+          <path d="M0 690 L0 174 C 100 152, 300 152, 400 174 L400 690 Z" fill="var(--dash)"/>
+          <path d="M0 174 C 100 152, 300 152, 400 174" stroke="var(--pen)" stroke-width="2.2" opacity=".55"/>
+          <path d="M0 190 C 100 169, 300 169, 400 190" stroke="var(--pen)" stroke-width="1.4" opacity=".16"/>
 
-          <!-- 스프링 메모 노트 — 조건을 적는 자리. 씬에서 제일 크다 -->
-          <path d="M26 192 h304 v186 h-304 z" opacity=".9"/>
-          <path d="M26 210 h304" opacity=".3"/>
-          <path d="M52 192 v-9 M92 192 v-9 M132 192 v-9 M172 192 v-9
-                   M212 192 v-9 M252 192 v-9 M292 192 v-9" opacity=".5"/>
+          <!-- ── 스프링 메모 노트 ── 조건을 적는 자리. 씬에서 제일 크다 -->
+          <path d="M31 197 h304 v186 h-304 z" fill="var(--pen)" opacity=".12"/>
+          <path d="M26 192 h304 v186 h-304 z" fill="var(--paper)"
+                stroke="var(--pen)" stroke-width="2.2" opacity=".95"/>
+          <path d="M26 212 h304" stroke="var(--pen)" stroke-width="1.4" opacity=".3"/>
+          <g stroke="var(--pen)" stroke-width="1.8" opacity=".5">
+            <path d="M52 194 v-11 M92 194 v-11 M132 194 v-11 M172 194 v-11
+                     M212 194 v-11 M252 194 v-11 M292 194 v-11"/>
+          </g>
+          <g fill="var(--paper)" stroke="var(--pen)" stroke-width="1.4" opacity=".45">
+            <circle cx="52" cy="183" r="3.4"/><circle cx="92" cy="183" r="3.4"/>
+            <circle cx="132" cy="183" r="3.4"/><circle cx="172" cy="183" r="3.4"/>
+            <circle cx="212" cy="183" r="3.4"/><circle cx="252" cy="183" r="3.4"/>
+            <circle cx="292" cy="183" r="3.4"/>
+          </g>
 
-          <!-- 메모지 뭉치 = 가보고 싶어 저장해둔 곳.
-               노트 안에 포스트잇을 붙였더니 글 쓸 자리를 먹었다(오른쪽 여백 64px).
-               따로 떼어 여기 쌓아두면 노트는 온전히 입력칸이 된다. -->
+          <!-- ── 메모지 뭉치 ── 가보고 싶어 저장해둔 곳.
+               노트 안에 붙였더니 글 쓸 자리를 먹어서 따로 떼어 여기 쌓았다. -->
           <g class="pins-art">
-            <path d="M340 202 h42 v52 h-42 z" opacity=".3"/>
-            <path d="M336 197 h42 v52 h-42 z" opacity=".45"/>
-            <path d="M332 192 h36 l8 8 v44 h-44 z" opacity=".8"/>
-            <path d="M368 192 v8 h8" opacity=".5"/>
-            <path d="M340 216 h26 M340 228 h20" opacity=".38"/>
+            <path d="M341 203 h41 v51 h-41 z" fill="var(--paper2)"
+                  stroke="var(--pen)" stroke-width="1.6" opacity=".5"/>
+            <path d="M336 198 h42 v52 h-42 z" fill="var(--paper2)"
+                  stroke="var(--pen)" stroke-width="1.8" opacity=".7"/>
+            <path d="M332 192 h36 l8 9 v43 h-44 z" fill="var(--paper)"
+                  stroke="var(--pen)" stroke-width="2.2" opacity=".95"/>
+            <path d="M368 192 v9 h8" stroke="var(--pen)" stroke-width="1.6" opacity=".55"/>
+            <path d="M340 218 h26 M340 230 h19" stroke="var(--pen)" stroke-width="1.5" opacity=".4"/>
           </g>
 
-          <!-- 커피 = 다녀온 곳. 위에서 내려다봤으니 김도 위에서 본 모습 —
-               동그랗게 퍼지며 옅어진다. -->
+          <!-- ── 커피 ── 다녀온 곳. 위에서 내려다본 컵이라 안에 커피 면이 보인다 -->
           <g class="cup-art">
-            <circle cx="356" cy="294" r="17" opacity=".55"/>
-            <circle cx="356" cy="294" r="11" opacity=".3"/>
-            <path d="M373 288 c8 0 10 3 10 6 s-2 6-10 6" opacity=".45"/>
+            <path d="M373 288 c9 0 11 3 11 7 s-2 7-11 7" fill="none"
+                  stroke="var(--pen)" stroke-width="2" opacity=".55"/>
+            <circle cx="356" cy="294" r="18" fill="var(--paper)"
+                    stroke="var(--pen)" stroke-width="2.2" opacity=".95"/>
+            <circle cx="356" cy="294" r="12" fill="var(--coffee)" opacity=".55"/>
+            <circle cx="356" cy="294" r="12" stroke="var(--pen)" stroke-width="1.3" opacity=".3"/>
           </g>
 
-          <!-- 글로브박스 — 늘 챙길 조건을 넣어두는 서랍. 조수석 앞이라 여기 있는 게 맞다.
-               닫힌 네모로 그렸더니 오빠가 못 찾았다(2026-08-09). 사물이 메뉴를 대신하려면
-               "여기 뭔가 들어 있다"가 그림만으로 보여야 한다 — 살짝 열어두고 안을 보여준다. -->
+          <!-- ── 글로브박스 ── 늘 챙길 조건. 살짝 열어 안을 보여준다 -->
           <g class="drawer-art">
-            <path d="M330 320 h62 v32 h-62 z" opacity=".38"/>
-            <path d="M337 325 h22 v22 h-22 z" opacity=".5"/>
-            <path d="M364 325 h20 v22 h-20 z" opacity=".33"/>
-            <path d="M328 348 h66 v30 h-66 z" opacity=".8"/>
-            <path d="M347 362 h28" opacity=".6" stroke-width="3"/>
+            <path d="M330 318 h62 v34 h-62 z" fill="var(--dash)"
+                  stroke="var(--pen)" stroke-width="1.6" opacity=".5"/>
+            <path d="M337 324 h21 v22 h-21 z" fill="var(--paper)"
+                  stroke="var(--pen)" stroke-width="1.4" opacity=".6"/>
+            <path d="M363 324 h20 v22 h-20 z" fill="var(--paper2)"
+                  stroke="var(--pen)" stroke-width="1.4" opacity=".45"/>
+            <path d="M328 348 h66 v30 h-66 z" fill="var(--paper2)"
+                  stroke="var(--pen)" stroke-width="2.2" opacity=".9"/>
+            <path d="M346 363 h30" stroke="var(--pen)" stroke-width="3.4" opacity=".6"/>
           </g>
 
-          <!-- 접힌 지도 = 어디서 찾을지 -->
+          <!-- ── 접힌 지도 ── 어디서 찾을지 -->
           <g class="map-art">
-            <path d="M26 402 l24-7 25 7 25-7 v60 l-25 7-25-7-24 7z" opacity=".8"/>
-            <path d="M50 395 v60 M75 402 v60" opacity=".35"/>
-            <circle cx="63" cy="428" r="4" opacity=".7"/>
+            <path d="M26 402 l24-7 25 7 25-7 v60 l-25 7-25-7-24 7z" fill="var(--paper)"
+                  stroke="var(--pen)" stroke-width="2.2" opacity=".95"/>
+            <path d="M50 395 v60 M75 402 v60" stroke="var(--pen)" stroke-width="1.5" opacity=".4"/>
+            <path d="M31 436 c9-6 17 3 24-2 s16 4 24-3 s12 2 18-1"
+                  stroke="var(--pen)" stroke-width="1.3" opacity=".28"/>
+            <path d="M38 414 c7 5 6 14 14 18" stroke="var(--pen)" stroke-width="1.3" opacity=".2"/>
+            <circle cx="63" cy="428" r="4.6" fill="var(--accent)" opacity=".85"/>
           </g>
         </g>
 

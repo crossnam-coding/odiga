@@ -2,17 +2,22 @@
   --ground:#f6f7f4;--card:#fff;--ink:#191d17;--muted:#6a7064;--line:#e3e6de;
   --accent:#2f6b4f;--accent-soft:#e6efe8;--brass:#a8762c;--brass-soft:#f6efe1;
   --caution:#94581c;--caution-soft:#fbf1e3;
+  /* 씬 전용 — 종이는 종이색으로 채워야 종이로 보인다 */
+  --paper:#fffdf7;--paper2:#f6f2e8;--dash:#eceade;--sky:#fbfaf5;--pen:#232a20;--coffee:#8a7350;
 }
 @media (prefers-color-scheme:dark){:root{
   --ground:#12150f;--card:#1b1f18;--ink:#eef0e8;--muted:#949a8c;--line:#2e3329;
   --accent:#7fc79c;--accent-soft:#17301f;--brass:#d9a45c;--brass-soft:#2b2113;
-  --caution:#dda45f;--caution-soft:#2e2213;}}
+  --caution:#dda45f;--caution-soft:#2e2213;
+  --paper:#2d342a;--paper2:#262c23;--dash:#161a13;--sky:#0d100c;--pen:#d3d9c8;--coffee:#5c4d38;}}
 :root[data-theme=dark]{--ground:#12150f;--card:#1b1f18;--ink:#eef0e8;--muted:#949a8c;--line:#2e3329;
   --accent:#7fc79c;--accent-soft:#17301f;--brass:#d9a45c;--brass-soft:#2b2113;
-  --caution:#dda45f;--caution-soft:#2e2213;}
+  --caution:#dda45f;--caution-soft:#2e2213;
+  --paper:#2d342a;--paper2:#262c23;--dash:#161a13;--sky:#0d100c;--pen:#d3d9c8;--coffee:#5c4d38;}
 :root[data-theme=light]{--ground:#f6f7f4;--card:#fff;--ink:#191d17;--muted:#6a7064;--line:#e3e6de;
   --accent:#2f6b4f;--accent-soft:#e6efe8;--brass:#a8762c;--brass-soft:#f6efe1;
-  --caution:#94581c;--caution-soft:#fbf1e3;}
+  --caution:#94581c;--caution-soft:#fbf1e3;
+  --paper:#fffdf7;--paper2:#f6f2e8;--dash:#eceade;--sky:#fbfaf5;--pen:#232a20;--coffee:#8a7350;}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -38,9 +43,7 @@ body{margin:0;background:var(--ground);color:var(--ink);line-height:1.55;
    씬은 연필(--muted), 만질 수 있는 것만 초록(--accent). 이 대비가 "무엇이 버튼인지"를 말해준다. */
 .ask{padding:0;margin:0 -14px}   /* wrap 의 좌우 여백을 상쇄해 대시보드를 화면 끝까지 흘린다 */
 .scene{position:relative}
-.scene-art{display:block;width:100%;height:auto;color:var(--muted);opacity:.8}
-@media (prefers-color-scheme:dark){.scene-art{opacity:.62}}
-:root[data-theme=dark] .scene-art{opacity:.62}
+.scene-art{display:block;width:100%;height:auto;color:var(--pen)}
 .hot{position:absolute;margin:0}
 
 /* ── 하늘 ── 지금 몇 시냐에 따라 앞유리 너머가 바뀐다.
@@ -65,7 +68,8 @@ body{margin:0;background:var(--ground);color:var(--ink);line-height:1.55;
 /* 앞유리 너머 = 지금 내가 어디 있는지.
    아치는 아래로 갈수록 넓다. 위쪽에 두면 긴 문구가 유리 밖으로 삐져나온다(2026-08-09 실측). */
 .loc{left:9%;right:9%;top:11.6%;display:flex;flex-direction:column;align-items:center;gap:1px;
-  text-align:center;font-size:12px;line-height:1.45;color:var(--muted)}
+  text-align:center;font-size:12px;line-height:1.45;color:var(--ink);
+  text-shadow:0 0 5px var(--sky),0 0 9px var(--sky),0 1px 2px var(--sky)}
 .loc b{color:var(--ink);font-weight:700}
 .loc button{border:none;background:none;color:var(--accent);font:inherit;font-size:12px;
   font-weight:700;cursor:pointer;padding:2px 6px;text-decoration:underline}
@@ -75,7 +79,7 @@ body{margin:0;background:var(--ground);color:var(--ink);line-height:1.55;
   border:none;resize:none;font:inherit;font-size:15px;line-height:26px;color:var(--ink);
   padding:20px 14px 12px;box-sizing:border-box;
   background:repeating-linear-gradient(to bottom,transparent 0 25px,
-    color-mix(in srgb,var(--muted) 26%,transparent) 25px 26px);
+    color-mix(in srgb,var(--pen) 22%,transparent) 25px 26px);
   background-position:0 20px}
 .notepad:focus{outline:none;background-color:color-mix(in srgb,var(--accent) 7%,transparent)}
 .notepad::placeholder{color:var(--muted);opacity:.85}
