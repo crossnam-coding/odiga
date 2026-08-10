@@ -150,15 +150,17 @@ body{margin:0;background:var(--dash);color:var(--ink);line-height:1.55;
 /* ── 사물이 살아 있다 ──
    전부 똑같이 색만 깜빡이던 걸 사물마다 자기다운 움직임으로 바꾼다(2026-08-11 오빠 요청):
    메모지는 바람에 펄럭이고, 커피는 김이 오르고, 서랍은 가끔 달그락, 지도는 음파가 퍼진다.
-   진폭은 전부 1~2px 안쪽 — 도구 화면이라 계속 시선을 뺏으면 안 된다. */
+   처음엔 진폭을 1~2px 안쪽으로 뒀는데 오빠가 "메모지 펄럭은 안 보인다"고 했다(2026-08-10).
+   실측: 메모지는 47×58px 인데 1.4deg 회전 = 최대 이동 1.84px. 안 보이는 게 당연했다.
+   → 눈에 걸릴 만큼(5~6px) 키우고 주기도 줄인다. 김·음파는 scale 로 커져서 원래 보였으므로 그대로. */
 .pins-art,.cup-art,.drawer-art,.map-art{transition:color .25s}
 
 /* 메모지 — 바람에 살짝. 핀 꽂힌 왼쪽 위를 축으로 돈다 */
-.pins-art{transform-box:fill-box;transform-origin:10% 3%;animation:flutter 5.5s ease-in-out infinite}
+.pins-art{transform-box:fill-box;transform-origin:10% 3%;animation:flutter 3.6s ease-in-out infinite}
 @keyframes flutter{
   0%,100%{transform:rotate(0deg) translateY(0)}
-  35%     {transform:rotate(-1.4deg) translateY(-1px)}
-  65%     {transform:rotate(.9deg) translateY(-.4px)}
+  35%     {transform:rotate(-4.6deg) translateY(-2.4px)}
+  65%     {transform:rotate(2.9deg) translateY(-1px)}
 }
 
 /* 커피 — 위에서 내려다본 김이라 동그랗게 퍼지며 옅어진다 */
@@ -173,12 +175,12 @@ body{margin:0;background:var(--dash);color:var(--ink);line-height:1.55;
 }
 
 /* 서랍 — 가끔 한 번 달그락 */
-.drawer-art{transform-box:fill-box;transform-origin:center;animation:rattle 6s ease-in-out infinite}
+.drawer-art{transform-box:fill-box;transform-origin:center;animation:rattle 4.5s ease-in-out infinite}
 @keyframes rattle{
-  0%,86%,100%{transform:translate(0,0)}
-  89%{transform:translate(.6px,1.4px)}
-  92%{transform:translate(-.5px,-.9px)}
-  95%{transform:translate(.3px,.5px)}
+  0%,82%,100%{transform:translate(0,0)}
+  86%{transform:translate(1.7px,3.4px)}
+  90%{transform:translate(-1.4px,-2.2px)}
+  94%{transform:translate(.8px,1.2px)}
 }
 
 /* 지도 — 음파가 퍼진다. 여기서 찾는다는 신호 */
@@ -189,10 +191,12 @@ body{margin:0;background:var(--dash);color:var(--ink);line-height:1.55;
   100%{transform:scale(2.3);opacity:0}
 }
 
-/* 아직 안 눌러본 사물은 자기 움직임에 더해 색까지 변한다. 한 번 누르면 색 변화만 멈춘다. */
-.scene.new-pins  .pins-art  {animation:flutter 5.5s ease-in-out infinite, wink 2.4s ease-in-out infinite}
+/* 아직 안 눌러본 사물은 자기 움직임에 더해 색까지 변한다. 한 번 누르면 색 변화만 멈춘다.
+   ⚠️ 여기 주기(3.6s/4.5s)는 위 .pins-art/.drawer-art 선언과 반드시 같이 고친다.
+   셀렉터가 더 구체적이라 여기가 이긴다 — 위만 고치면 안 눌러본 사물에서 수정이 안 먹는다(2026-08-10 실측). */
+.scene.new-pins  .pins-art  {animation:flutter 3.6s ease-in-out infinite, wink 2.4s ease-in-out infinite}
 .scene.new-cup   .cup-art   {animation:wink 2.4s ease-in-out infinite}
-.scene.new-glove .drawer-art{animation:rattle 6s ease-in-out infinite, wink 2.4s ease-in-out infinite}
+.scene.new-glove .drawer-art{animation:rattle 4.5s ease-in-out infinite, wink 2.4s ease-in-out infinite}
 .scene.new-map   .map-art   {animation:wink 2.4s ease-in-out infinite}
 @keyframes wink{0%,100%{color:var(--muted)}45%{color:var(--accent)}}
 
