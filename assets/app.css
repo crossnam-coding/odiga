@@ -320,9 +320,16 @@ body{margin:0;background:var(--dash);color:var(--ink);line-height:1.55;
 .acts .pinbtn svg{width:17px;height:17px;flex:none}
 .acts .pinbtn[aria-pressed=true]{background:var(--brass-soft);border-color:var(--brass);color:var(--brass)}
 
-.shots{display:flex;gap:7px;overflow-x:auto;padding:0 15px 13px;scroll-snap-type:x mandatory}
-.shots img{flex:0 0 62%;aspect-ratio:4/3;object-fit:cover;border-radius:11px;
-  border:1px solid var(--line);scroll-snap-align:start}
+/* 사진은 이름 바로 밑, 카드 안(.cbody)에 있다. 좌우 패딩을 음수 마진으로 되돌려
+   카드 가장자리까지 채운다 — 종이 위에 사진을 늘어놓은 것처럼 보이게. */
+.shots{display:flex;gap:7px;overflow-x:auto;scroll-snap-type:x mandatory;
+  margin:1px -15px 0;padding:0 15px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.shots::-webkit-scrollbar{display:none}
+/* 62%였을 땐 한 장이 화면을 채워 "사진이 더 있다"가 안 보였다. 46% 면 두 장 반이 걸쳐 보인다.
+   min-width:0 이 없으면 flex 항목의 기본값(min-width:auto)이 원본 400px 를 하한으로 잡아
+   46% 를 무시하고 402px 로 부푼다 — 카드(347px)보다 커진다(2026-08-10 실측). */
+.shots img{flex:0 0 46%;min-width:0;aspect-ratio:4/3;object-fit:cover;border-radius:11px;
+  border:1px solid var(--line);scroll-snap-align:start;background:var(--paper2)}
 
 .note{background:var(--paper);border:1px dashed color-mix(in srgb,var(--pen) 24%,transparent);
   border-radius:14px;padding:13px 15px;

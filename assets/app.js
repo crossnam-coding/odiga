@@ -438,6 +438,15 @@ function card(p, dist, best) {
           : '거리 미계산'}</div>
       </div>`];
 
+  // 사진은 이름 바로 밑에 둔다. 처음엔 카드 맨 끝(버튼 아래)에 있었는데,
+  // 카드 하나가 965px 이라 뷰포트(812px)를 넘어서 사진이 시작점에서 649px 아래에 깔렸다.
+  // 버튼까지 보면 카드가 끝난 줄 알고 넘어가니 아무도 사진에 도달하지 못했다
+  // (2026-08-10 오빠: "사진이 안나오는건 왜 아나오는거야"). 사진은 "여기 어떤 집이지"에
+  // 제일 먼저 답하는 정보라 근거보다 앞에 오는 게 맞다.
+  if (p.photos?.length) {
+    parts.push('<div class="shots">' +
+      p.photos.map((s) => `<img src="${s}" alt="${p.name} 사진" loading="lazy" decoding="async">`).join('') + '</div>');
+  }
   if (p.hours || p.closed) {
     parts.push(`<div class="cmeta">🕘 ${[p.hours, p.closed].filter(Boolean).join(' · ')}</div>`);
   }
@@ -474,10 +483,6 @@ function card(p, dist, best) {
         <svg viewBox="0 0 48 48" aria-hidden="true"><use href="#i-pin"/></svg><span>${pinned ? '붙여둠' : '붙이기'}</span></button>
     </div></div>`);
 
-  if (p.photos?.length) {
-    parts.push('<div class="shots">' +
-      p.photos.map((s) => `<img src="${s}" alt="${p.name} 사진" loading="lazy">`).join('') + '</div>');
-  }
   el.innerHTML = parts.join('');
   el.querySelector('[data-pin]')?.addEventListener('click', (e) => {
     const b = e.currentTarget;
