@@ -255,6 +255,32 @@ function drawSaved() {
   });
 }
 
+/* ── 밝게 / 어둡게 ──
+   토글이 없어서 테마를 보려면 폰 설정으로 나가야 했다(2026-08-11 오빠: "라이트 어캐 열어?").
+   한 번도 안 누른 사람은 폰 설정을 따르고, 한 번 누르면 그 선택을 기억한다. */
+const THEME_KEY = 'odiga.theme.v1';
+const sysDark = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
+const nowDark = () => {
+  const t = document.documentElement.getAttribute('data-theme');
+  return t ? t === 'dark' : sysDark();
+};
+function drawTheme() {
+  const b = $('#themeBtn');
+  if (b) b.classList.toggle('is-dark', nowDark());
+  // 주소창·상태바 색도 같이 맞춘다. 안 그러면 위쪽만 다른 테마로 남는다.
+  document.querySelectorAll('meta[name=theme-color]').forEach((m) => m.remove());
+  const m = document.createElement('meta');
+  m.name = 'theme-color';
+  m.content = getComputedStyle(document.documentElement).getPropertyValue('--dash').trim();
+  document.head.appendChild(m);
+}
+function toggleTheme() {
+  const next = nowDark() ? 'light' : 'dark';
+  try { localStorage.setItem(THEME_KEY, next); } catch {}
+  document.documentElement.setAttribute('data-theme', next);
+  drawTheme();
+}
+
 /* ── 아직 안 눌러본 사물 ──
    사물 밑에 글자 라벨을 달았더니 배치가 지저분했다(2026-08-11 오빠 지적). 라벨을 빼는 대신
    한 번도 안 눌러본 사물이 은은히 반짝여 눌러보게 한다. 한 번 누르면 영구히 멈춘다.
@@ -646,6 +672,13 @@ async function init() {
     b.addEventListener('click', () => saveProfile([...PRESETS[b.dataset.preset]])));
   $('#regionQ').addEventListener('input', drawPick);
 
+  $('#themeBtn').addEventListener('click', toggleTheme);
+  // 아직 한 번도 안 골랐으면 폰 설정을 따라간다
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (!localStorage.getItem(THEME_KEY)) drawTheme();
+  });
+
+  drawTheme();
   drawProfile();
   drawSaved();
   drawPick();
